@@ -138,6 +138,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
 
+    steps:
     - name: Download artifacts
       id: downloaded_artifacts
       uses: actions/download-artifact@v4
