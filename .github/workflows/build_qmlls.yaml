@@ -143,11 +143,6 @@ jobs:
         repository: qt/qtdeclarative
         path: source
 
-    - name: Get current SHA
-      id: vars
-      working-directory: source
-      run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-
     - name: Download artifacts
       id: downloaded_artifacts
       uses: actions/download-artifact@v4
