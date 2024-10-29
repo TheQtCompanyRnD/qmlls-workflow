@@ -29,6 +29,7 @@ jobs:
             deps:
             tools: ccache
             install_cmd: HOMEBREW_NO_INSTALL_CLEANUP=1 brew install
+            configure_flags: -- '-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64'
           - name: windows
             os:   windows-latest
             install_cmd: choco install
