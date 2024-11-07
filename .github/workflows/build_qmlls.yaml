@@ -24,18 +24,24 @@ jobs:
             tools: ccache
             install_cmd: sudo apt-get -y install
             configure_flags: -xcb
+            debugging_symbols_extension: .dbg
           - name: macos
             os:   macos-latest
             deps:
             tools: ccache
             install_cmd: HOMEBREW_NO_INSTALL_CLEANUP=1 brew install
             configure_flags: -- '-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64'
+            debugging_symbols_extension: .dSYM
+            unsigned_suffix: -unsigned
           - name: windows
             os:   windows-latest
             install_cmd: choco install
             install_cmd_postfix: --yes --no-progress
             tools: ccache
             configure_flags: -no-feature-sql-psql -no-feature-sql-mysql -no-feature-sql-odbc
+            debugging_symbols_extension: .pdb
+            executable_extension: .exe
+            unsigned_suffix: -unsigned
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -109,8 +115,7 @@ jobs:
         echo -e "commit: ${{ steps.vars.outputs.sha_short }}\nbuild: $(date +"%Y-%m-%dT%H:%M:%SZ")" \
         > info.txt
 
-    # workaround because -separate-debug-info is not supported in static builds
-    # note: msvc on windows separates the debug info, no need to strip by hand
+    # workarounds because -separate-debug-info is not supported in static builds
     - name: Stripping qmlls binary on linux
       if: matrix.name == 'ubuntu'
       run: |
@@ -124,14 +129,22 @@ jobs:
         dsymutil ./build/qtbase/bin/qmlls -o ./build/qtbase/bin/qmlls.dSYM
         strip ./build/qtbase/bin/qmlls
 
-    - name: Zip build files in archive
-      run: 7z a qmlls-${{ matrix.name }}-${{ steps.vars.outputs.revision }}.zip ./build/qtbase/bin/qmlls* info.txt
+    - name: Zipping debug symbols and executable
+      run: |
+        7z a qmlls-${{ matrix.name }}-${{ steps.vars.outputs.revision }}-debugsymbols.zip ./build/qtbase/bin/qmlls${{ matrix.debugging_symbols_extension }} info.txt
+        7z a qmlls-${{ matrix.name }}-${{ steps.vars.outputs.revision }}${{ matrix.unsigned_suffix }}.zip ./build/qtbase/bin/qmlls${{ matrix.executable_extension }} info.txt
 
-    - name: Upload archive
+    - name: Upload artefact
       uses: actions/upload-artifact@v4
       with:
-        path: qmlls-${{ matrix.name }}-${{ steps.vars.outputs.revision }}.zip
-        name: qmlls-${{ matrix.name }}-${{ steps.vars.outputs.revision }}.zip
+        path: qmlls-${{ matrix.name }}-${{ steps.vars.outputs.revision }}${{ matrix.unsigned_suffix }}.zip
+        name: qmlls-${{ matrix.name }}-${{ steps.vars.outputs.revision }}${{ matrix.unsigned_suffix }}.zip
+
+    - name: Upload artefact with debug symbols
+      uses: actions/upload-artifact@v4
+      with:
+        path: qmlls-${{ matrix.name }}-${{ steps.vars.outputs.revision }}-debugsymbols.zip
+        name: qmlls-${{ matrix.name }}-${{ steps.vars.outputs.revision }}-debugsymbols.zip
 
   release:
     permissions:
@@ -146,9 +159,22 @@ jobs:
       with:
         path: release
 
-    - name: Get current revision
+    - name: Get current revision and filenames
       id: vars
-      run: echo revision=$(date "+%Y%m%d") >> $GITHUB_OUTPUT
+      run: |
+        echo revision=$(date "+%Y%m%d") >> $GITHUB_OUTPUT
+        echo unsigned_macos_archive=$(ls release/qmlls-macos-*-unsigned.zip) >> $GITHUB_OUTPUT
+        echo unsigned_windows_archive=$(ls release/qmlls-windows-*-unsigned.zip) >> $GITHUB_OUTPUT
+
+    - name: Sign archives
+        id: sign-archives
+        uses: TheQtCompanyRnD/SignArchives@v1
+        with:
+          macos: ${{ steps.vars.outputs.unsigned_macos_archive }}
+          win-x64: ${{ steps.vars.outputs.unsigned_windows_archive }}
+          jenkins-url: '${{ secrets.JENKINS_URL }}'
+          jenkins-user: '${{ secrets.JENKINS_USERNAME }}'
+          jenkins-token: '${{ secrets.JENKINS_TOKEN }}'
 
     - name: Create nightly release
       if: ${{ ! contains(github.ref, 'tags/qmlls-') }}
@@ -159,4 +185,5 @@ jobs:
         tag_name: qmlls-nightly-${{ steps.vars.outputs.revision }}
         draft: false
         prerelease: true
-        files: release/*/*.zip
+        files: ${{ steps.sign-archives.outputs.macos }} ${{ steps.sign-archives.outputs.win-x64 }} release/*/{windows,macos}*-debugsymbols.zip release/*/qmlls-linux-*.zip
+
