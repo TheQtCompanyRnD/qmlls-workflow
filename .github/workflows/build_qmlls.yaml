@@ -111,7 +111,7 @@ jobs:
       run: | 
         cmake -DSYNC_TO_MODULE="qtdeclarative" -DSYNC_TO_BRANCH="dev" -P cmake/QtSynchronizeRepo.cmake
         echo "Using following SHAs: "
-        for i in . qtdeclarative qtbase qtimageformats qtlanguageserver qtshadertools qtsvg; do (cd $i; echo "$i: $(git show head -s --format=oneline)";); done;
+        for i in . qtdeclarative qtbase qtimageformats qtlanguageserver qtshadertools qtsvg; do (cd $i; echo "$i: $(git show HEAD -s --format=oneline)";); done;
 
     - name: Get current SHA and revision
       id: vars
