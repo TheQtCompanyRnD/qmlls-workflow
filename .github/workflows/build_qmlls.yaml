@@ -88,22 +88,29 @@ jobs:
         ccache --set-config compression=true
         ccache --set-config max_size=1G
 
+    - name: cache repository
+      id: cache-repo
+      uses: actions/cache@v4
+      with:
+        path: source
+        key: ${{ runner.os }}-repo
+
     - name: initialize subrepositories
+      if: steps.cache-repo.outputs.cache-hit != 'true'
       working-directory: source
       run:  ./init-repository --module-subset=qtdeclarative --mirror="https://code.qt.io/qt/"
 
+    - name: update cached repository
+      if: steps.cache-repo.outputs.cache-hit == 'true'
+      working-directory: source
+      run:  git fetch
+
     - name: set qtdeclarative to dev and set dependencies via dependencies.yaml
       working-directory: source
-      run: cmake -DSYNC_TO_MODULE="qtdeclarative" -DSYNC_TO_BRANCH="dev" -P cmake/QtSynchronizeRepo.cmake
-
-    - name: configure and build
-      run:  |
-        mkdir build
-        cd build
-        ../source/configure -force-debug-info -ccache -no-pch -release -static \
-          -force-bundled-libs -submodules qtdeclarative -nomake tests -nomake examples \
-          -prefix '${{ runner.temp }}'/install_dir -no-sbom ${{ matrix.configure_flags }}
-        ninja qmlls
+      run: | 
+        cmake -DSYNC_TO_MODULE="qtdeclarative" -DSYNC_TO_BRANCH="dev" -P cmake/QtSynchronizeRepo.cmake
+        echo "Using following SHAs: "
+        for i in . ../qtbase ../qtimageformats ../qtlanguageserver ../qtshadertools ../qtsvg; do (cd $i; echo "$i: $(git show head -s --format=oneline)";); done;
 
     - name: Get current SHA and revision
       id: vars
@@ -112,26 +119,45 @@ jobs:
         echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
         echo revision=$(date "+nightly-%Y%m%d") >> $GITHUB_OUTPUT
 
+    - name: cache build
+      id: cache-build
+      uses: actions/cache@v4
+      with:
+        path: build
+        key: ${{ runner.os }}-${{ steps.vars.outputs.sha_short }}-build
+
+    - name: configure and build
+      if: steps.cache-build.outputs.cache-hit != 'true'
+      run:  |
+        mkdir build
+        cd build
+        ../source/configure -force-debug-info -ccache -no-pch -release -static \
+          -force-bundled-libs -submodules qtdeclarative -nomake tests -nomake examples \
+          -prefix '${{ runner.temp }}'/install_dir -no-sbom ${{ matrix.configure_flags }}
+        ninja qmlls
+
     - name: Create info file
+      if: steps.cache-build.outputs.cache-hit != 'true'
       run: |
         echo -e "commit: ${{ steps.vars.outputs.sha_short }}\nbuild: $(date +"%Y-%m-%dT%H:%M:%SZ")" \
         > info.txt
 
     # workarounds because -separate-debug-info is not supported in static builds
     - name: Stripping qmlls binary on linux
-      if: matrix.name == 'ubuntu'
+      if: matrix.name == 'ubuntu' && steps.cache-build.outputs.cache-hit != 'true'
       run: |
         objcopy --only-keep-debug ./build/qtbase/bin/qmlls ./build/qtbase/bin/qmlls.dbg
         strip ./build/qtbase/bin/qmlls
         objcopy --add-gnu-debuglink=./build/qtbase/bin/qmlls.dbg ./build/qtbase/bin/qmlls
 
     - name: Stripping qmlls binary on mac
-      if: matrix.name == 'macos'
+      if: matrix.name == 'macos' && steps.cache-build.outputs.cache-hit != 'true'
       run: |
         dsymutil ./build/qtbase/bin/qmlls -o ./build/qtbase/bin/qmlls.dSYM
         strip ./build/qtbase/bin/qmlls
 
     - name: Zipping debug symbols and executable
+      if: steps.cache-build.outputs.cache-hit != 'true'
       run: |
         7z a qmlls-${{ matrix.name }}-${{ steps.vars.outputs.revision }}-debugsymbols.zip ./build/qtbase/bin/qmlls${{ matrix.debugging_symbols_extension }} info.txt
         7z a qmlls-${{ matrix.name }}-${{ steps.vars.outputs.revision }}${{ matrix.unsigned_suffix }}.zip ./build/qtbase/bin/qmlls${{ matrix.executable_extension }} info.txt
