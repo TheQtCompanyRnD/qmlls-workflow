@@ -167,14 +167,14 @@ jobs:
         echo unsigned_windows_archive=$(ls release/qmlls-windows-*-unsigned.zip) >> $GITHUB_OUTPUT
 
     - name: Sign archives
-        id: sign-archives
-        uses: TheQtCompanyRnD/SignArchives@v1
-        with:
-          macos: ${{ steps.vars.outputs.unsigned_macos_archive }}
-          win-x64: ${{ steps.vars.outputs.unsigned_windows_archive }}
-          jenkins-url: '${{ secrets.JENKINS_URL }}'
-          jenkins-user: '${{ secrets.JENKINS_USERNAME }}'
-          jenkins-token: '${{ secrets.JENKINS_TOKEN }}'
+      id: sign-archives
+      uses: TheQtCompanyRnD/SignArchives@v1
+      with:
+        macos: ${{ steps.vars.outputs.unsigned_macos_archive }}
+        win-x64: ${{ steps.vars.outputs.unsigned_windows_archive }}
+        jenkins-url: '${{ secrets.JENKINS_URL }}'
+        jenkins-user: '${{ secrets.JENKINS_USERNAME }}'
+        jenkins-token: '${{ secrets.JENKINS_TOKEN }}'
 
     - name: Create nightly release
       if: ${{ ! contains(github.ref, 'tags/qmlls-') }}
