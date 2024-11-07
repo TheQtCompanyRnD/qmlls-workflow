@@ -46,8 +46,9 @@ jobs:
 
     steps:
     - uses: lukka/get-cmake@latest
-      cmakeVersion: latest
-      ninjaVersion: latest
+      with:
+        cmakeVersion: latest
+        ninjaVersion: latest
 
     - name: prepare Linux
       if: runner.os == 'Linux'
