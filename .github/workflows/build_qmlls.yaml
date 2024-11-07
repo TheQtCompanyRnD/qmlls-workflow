@@ -47,7 +47,7 @@ jobs:
     steps:
     - uses: lukka/get-cmake@latest
       with:
-        cmakeVersion: latest
+        cmakeVersion: "~3.30.0"
         ninjaVersion: latest
 
     - name: prepare Linux
