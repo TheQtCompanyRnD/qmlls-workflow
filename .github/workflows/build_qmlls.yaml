@@ -100,7 +100,7 @@ jobs:
         cd build
         ../source/configure -force-debug-info -ccache -no-pch -release -static \
           -force-bundled-libs -submodules qtdeclarative -nomake tests -nomake examples \
-          -prefix '${{ runner.temp }}'/install_dir ${{ matrix.configure_flags }}
+          -prefix '${{ runner.temp }}'/install_dir -no-sbom ${{ matrix.configure_flags }}
         ninja qmlls
 
     - name: Get current SHA and revision
@@ -149,9 +149,8 @@ jobs:
   release:
     permissions:
       contents: write
-    runs-on: ubuntu-latest
+    runs-on: signing-runner
     needs: build
-
     steps:
     - name: Download artifacts
       id: downloaded_artifacts
