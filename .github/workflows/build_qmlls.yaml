@@ -45,6 +45,45 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
+    - uses: lukka/get-cmake@latest
+      with:
+        cmakeVersion: "~3.30.0"
+        ninjaVersion: latest
+
+    - name: prepare Linux
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100
+        sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 100
+    - name: prepare macOS
+      if: runner.os == 'macOS'
+      run: echo noop
+    - name: prepare Windows
+      if: runner.os == 'Windows'
+      shell: cmd
+      run: |
+        call "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
+        set >> "%GITHUB_ENV%"
+
+    - name: restore ccache
+      uses: actions/cache@v4
+      with:
+        path: ${{ runner.temp }}/ccache
+        key:  ccache-${{ matrix.os }}
+
+    - name: install build dependencies
+      run:  ${{ matrix.install_cmd }}  ${{ matrix.deps }}  ${{ matrix.install_cmd_postfix }}
+      if: matrix.deps != ''
+    - name: install compiler tools
+      run:  ${{ matrix.install_cmd }}  ${{ matrix.tools }}  ${{ matrix.install_cmd_postfix }}
+    - name: configure ccache
+      run: |
+        ccache --set-config sloppiness=file_macro,time_macros
+        ccache --set-config cache_dir='${{ runner.temp }}'/ccache
+        ccache --set-config compression=true
+        ccache --set-config max_size=1G
+
     - name: get build cache key
       id: build_cache_key
       # we build qmlls once per week, so use week number + year as cache key
@@ -56,50 +95,6 @@ jobs:
       with:
         path: build
         key: ${{ runner.os }}-${{ steps.build_cache_key.outputs.key }}-build
-
-    - uses: lukka/get-cmake@latest
-      if: steps.cache-build.outputs.cache-hit != 'true'
-      with:
-        cmakeVersion: "~3.30.0"
-        ninjaVersion: latest
-
-    - name: prepare Linux
-      if: runner.os == 'Linux' && steps.cache-build.outputs.cache-hit != 'true'
-      run: |
-        sudo apt-get update
-        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100
-        sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 100
-    - name: prepare macOS
-      if: runner.os == 'macOS' && steps.cache-build.outputs.cache-hit != 'true'
-      run: echo noop
-    - name: prepare Windows
-      if: runner.os == 'Windows' && steps.cache-build.outputs.cache-hit != 'true'
-      shell: cmd
-      run: |
-        call "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
-        set >> "%GITHUB_ENV%"
-
-    - name: restore ccache
-      if: steps.cache-build.outputs.cache-hit != 'true'
-      uses: actions/cache@v4
-      with:
-        path: ${{ runner.temp }}/ccache
-        key:  ccache-${{ matrix.os }}
-
-    - name: install build dependencies
-      if: steps.cache-build.outputs.cache-hit != 'true'
-      run:  ${{ matrix.install_cmd }}  ${{ matrix.deps }}  ${{ matrix.install_cmd_postfix }}
-      if: matrix.deps != ''
-    - name: install compiler tools
-      if: steps.cache-build.outputs.cache-hit != 'true'
-      run:  ${{ matrix.install_cmd }}  ${{ matrix.tools }}  ${{ matrix.install_cmd_postfix }}
-    - name: configure ccache
-      if: steps.cache-build.outputs.cache-hit != 'true'
-      run: |
-        ccache --set-config sloppiness=file_macro,time_macros
-        ccache --set-config cache_dir='${{ runner.temp }}'/ccache
-        ccache --set-config compression=true
-        ccache --set-config max_size=1G
 
     - name: cache repository
       id: cache-repo
@@ -139,6 +134,12 @@ jobs:
       run: |
         echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
         echo revision=$(date "+nightly-%Y%m%d") >> $GITHUB_OUTPUT
+
+    - name: Parse revision from cached artefact
+      id: vars
+      if: steps.cache-build.outputs.cache-hit == 'true'
+      working-directory: source/qtdeclarative
+      run: echo revision=nightly-$(ls qmlls-*.zip | head -n 1 | tr -d "A-z-.") >> $GITHUB_OUTPUT
 
     - name: configure and build
       if: steps.cache-build.outputs.cache-hit != 'true'
