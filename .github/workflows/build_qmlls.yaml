@@ -135,7 +135,7 @@ jobs:
       id: vars
       run: |
         [ "${{ steps.cache_artefacts.outputs.cache-hit }}" = "true" ] && {
-          echo revision=nightly-$(ls qmlls-*.zip | head -n 1 | tr -d "A-z-.") >> $GITHUB_OUTPUT
+          echo revision=nightly-$(ls artefacts/qmlls-*.zip | head -n 1 | tr -d "A-z-.") >> $GITHUB_OUTPUT
         } || {
           cd source/qtdeclarative
           echo revision=$(date "+nightly-%Y%m%d") >> $GITHUB_OUTPUT
