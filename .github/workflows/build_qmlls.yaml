@@ -195,7 +195,7 @@ jobs:
     permissions:
       contents: write
     # runs-on: signing-runner
-    runs-on: ubuntu
+    runs-on: ubuntu-latest
     environment: Signing credentials
     needs: build
     steps:
