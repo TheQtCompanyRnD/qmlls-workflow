@@ -206,8 +206,8 @@ jobs:
       id: vars
       run: |
         echo revision=$(date "+%Y%m%d") >> $GITHUB_OUTPUT
-        echo unsigned_macos_archive=$(ls release/qmlls-macos-*-unsigned.zip) >> $GITHUB_OUTPUT
-        echo unsigned_windows_archive=$(ls release/qmlls-windows-*-unsigned.zip) >> $GITHUB_OUTPUT
+        echo unsigned_macos_archive=$(ls release/qmlls-macos-*-unsigned.zip/qmlls-macos-*-unsigned.zip | head -n 1) >> $GITHUB_OUTPUT
+        echo unsigned_windows_archive=$(ls release/qmlls-windows-*-unsigned.zip/qmlls-windows-*-unsigned.zip | head -n 1) >> $GITHUB_OUTPUT
 
     - name: Sign archives
       id: sign-archives
