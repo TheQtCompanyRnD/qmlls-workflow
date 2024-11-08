@@ -176,9 +176,8 @@ jobs:
       if: steps.cache_artefacts.outputs.cache-hit != 'true'
       run: |
         mkdir artefacts
-        cd artefacts
-        7z a qmlls-${{ matrix.name }}-${{ steps.vars.outputs.revision }}-debugsymbols.zip ./build/qtbase/bin/qmlls${{ matrix.debugging_symbols_extension }} info.txt
-        7z a qmlls-${{ matrix.name }}-${{ steps.vars.outputs.revision }}${{ matrix.unsigned_suffix }}.zip ./build/qtbase/bin/qmlls${{ matrix.executable_extension }} info.txt
+        7z a artefacts/qmlls-${{ matrix.name }}-${{ steps.vars.outputs.revision }}-debugsymbols.zip ./build/qtbase/bin/qmlls${{ matrix.debugging_symbols_extension }} info.txt
+        7z a artefacts/qmlls-${{ matrix.name }}-${{ steps.vars.outputs.revision }}${{ matrix.unsigned_suffix }}.zip ./build/qtbase/bin/qmlls${{ matrix.executable_extension }} info.txt
 
     - name: Upload artefact
       uses: actions/upload-artifact@v4
