@@ -66,11 +66,6 @@ jobs:
         call "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
         set >> "%GITHUB_ENV%"
 
-    - uses: actions/checkout@v4
-      with:
-        path: source
-        repository: qt/qt5
-
     - name: restore ccache
       uses: actions/cache@v4
       with:
@@ -89,24 +84,43 @@ jobs:
         ccache --set-config compression=true
         ccache --set-config max_size=1G
 
+    - name: get build cache key
+      id: build_cache_key
+      # we build qmlls once per week, so use week number + year as cache key
+      run: echo "key=$(date "+%W.%Y")" >> $GITHUB_OUTPUT
+
+    - name: cache build
+      id: cache-build
+      uses: actions/cache@v4
+      with:
+        path: build
+        key: ${{ runner.os }}-${{ steps.build_cache_key.outputs.key }}-build
+
     - name: cache repository
       id: cache-repo
       uses: actions/cache@v4
+      if: steps.cache-build.outputs.cache-hit != 'true'
       with:
         path: source
-        key: ${{ runner.os }}-repo
+        key: ${{ runner.os }}-qt5repo
 
-    - name: initialize subrepositories
-      if: steps.cache-repo.outputs.cache-hit != 'true'
-      working-directory: source
-      run:  ./init-repository --module-subset=qtdeclarative --mirror="https://code.qt.io/qt/"
+    - name: cloning qt5 and initialize subrepositories
+      if: steps.cache-repo.outputs.cache-hit != 'true' && steps.cache-build.outputs.cache-hit != 'true'
+      run:  |
+        git clone https://code.qt.io/qt/qt5.git source
+        cd source
+        ./init-repository --module-subset=qtdeclarative
 
     - name: update cached repository
-      if: steps.cache-repo.outputs.cache-hit == 'true'
+      if: steps.cache-repo.outputs.cache-hit == 'true' && steps.cache-build.outputs.cache-hit != 'true'
       working-directory: source
-      run:  git fetch
+      run: |
+        git fetch
+        cd qtdeclarative
+        git reset --hard origin/dev
 
     - name: set qtdeclarative to dev and set dependencies via dependencies.yaml
+      if: steps.cache-build.outputs.cache-hit != 'true'
       working-directory: source
       run: | 
         cmake -DSYNC_TO_MODULE="qtdeclarative" -DSYNC_TO_BRANCH="dev" -P cmake/QtSynchronizeRepo.cmake
@@ -115,17 +129,11 @@ jobs:
 
     - name: Get current SHA and revision
       id: vars
+      if: steps.cache-build.outputs.cache-hit != 'true'
       working-directory: source/qtdeclarative
       run: |
         echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
         echo revision=$(date "+nightly-%Y%m%d") >> $GITHUB_OUTPUT
-
-    - name: cache build
-      id: cache-build
-      uses: actions/cache@v4
-      with:
-        path: build
-        key: ${{ runner.os }}-${{ steps.vars.outputs.sha_short }}-build
 
     - name: configure and build
       if: steps.cache-build.outputs.cache-hit != 'true'
