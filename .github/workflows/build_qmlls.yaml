@@ -129,9 +129,9 @@ jobs:
 
     - name: Get current SHA and revision
       id: vars
-      working-directory: source/qtdeclarative
       run: |
         [ "${{ steps.cache-build.outputs.cache-hit }}" = "true" ] && {
+          cd source/qtdeclarative
           echo revision=$(date "+nightly-%Y%m%d") >> $GITHUB_OUTPUT
           echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
         } || {
