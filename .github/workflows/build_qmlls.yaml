@@ -179,6 +179,7 @@ jobs:
     permissions:
       contents: write
     runs-on: signing-runner
+    environment: Signing credentials
     needs: build
     steps:
     - name: Download artifacts
