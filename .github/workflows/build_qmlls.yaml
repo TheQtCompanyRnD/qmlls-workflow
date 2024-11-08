@@ -45,41 +45,42 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
+    - name: get artefacts cache key
+      id: artefacts_cache_key
+      # we build qmlls once per week, so use week number + year as cache key
+      run: echo "key=$(date "+%W.%Y")" >> $GITHUB_OUTPUT
+
+    - name: cache artefacts
+      id: cache_artefacts
+      uses: actions/cache@v4
+      with:
+        path: artefacts
+        key: ${{ runner.os }}-${{ steps.artefacts_cache_key.outputs.key }}-artefacts
+
     - uses: lukka/get-cmake@latest
+      if: steps.cache_artefacts.outputs.cache-hit != 'true'
       with:
         cmakeVersion: "~3.30.0"
         ninjaVersion: latest
 
     - name: prepare Linux
-      if: runner.os == 'Linux'
+      if: runner.os == 'Linux' && steps.cache_artefacts.outputs.cache-hit != 'true'
       run: |
         sudo apt-get update
         sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100
         sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 100
     - name: prepare macOS
-      if: runner.os == 'macOS'
+      if: runner.os == 'macOS' && steps.cache_artefacts.outputs.cache-hit != 'true'
       run: echo noop
     - name: prepare Windows
-      if: runner.os == 'Windows'
+      if: runner.os == 'Windows' && steps.cache_artefacts.outputs.cache-hit != 'true'
       shell: cmd
       run: |
         call "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
         set >> "%GITHUB_ENV%"
 
-    - name: get build cache key
-      id: build_cache_key
-      # we build qmlls once per week, so use week number + year as cache key
-      run: echo "key=$(date "+%W.%Y")" >> $GITHUB_OUTPUT
-
-    - name: cache build
-      id: cache-build
-      uses: actions/cache@v4
-      with:
-        path: build
-        key: ${{ runner.os }}-${{ steps.build_cache_key.outputs.key }}-build
-
-
     - name: restore ccache
+      if: steps.cache_artefacts.outputs.cache-hit != 'true'
       uses: actions/cache@v4
       with:
         path: ${{ runner.temp }}/ccache
@@ -87,10 +88,12 @@ jobs:
 
     - name: install build dependencies
       run:  ${{ matrix.install_cmd }}  ${{ matrix.deps }}  ${{ matrix.install_cmd_postfix }}
-      if: matrix.deps != ''
+      if: matrix.deps != '' && steps.cache_artefacts.outputs.cache-hit != 'true'
     - name: install compiler tools
+      if: steps.cache_artefacts.outputs.cache-hit != 'true'
       run:  ${{ matrix.install_cmd }}  ${{ matrix.tools }}  ${{ matrix.install_cmd_postfix }}
     - name: configure ccache
+      if: steps.cache_artefacts.outputs.cache-hit != 'true'
       run: |
         ccache --set-config sloppiness=file_macro,time_macros
         ccache --set-config cache_dir='${{ runner.temp }}'/ccache
@@ -100,20 +103,20 @@ jobs:
     - name: cache repository
       id: cache-repo
       uses: actions/cache@v4
-      if: steps.cache-build.outputs.cache-hit != 'true'
+      if: steps.cache_artefacts.outputs.cache-hit != 'true'
       with:
         path: source
         key: ${{ runner.os }}-qt5repo
 
     - name: cloning qt5 and initialize subrepositories
-      if: steps.cache-repo.outputs.cache-hit != 'true' && steps.cache-build.outputs.cache-hit != 'true'
+      if: steps.cache-repo.outputs.cache-hit != 'true' && steps.cache_artefacts.outputs.cache-hit != 'true'
       run:  |
         git clone https://code.qt.io/qt/qt5.git source
         cd source
         ./init-repository --module-subset=qtdeclarative
 
     - name: update cached repository
-      if: steps.cache-repo.outputs.cache-hit == 'true' && steps.cache-build.outputs.cache-hit != 'true'
+      if: steps.cache-repo.outputs.cache-hit == 'true' && steps.cache_artefacts.outputs.cache-hit != 'true'
       working-directory: source
       run: |
         git fetch
@@ -121,7 +124,7 @@ jobs:
         git reset --hard origin/dev
 
     - name: set qtdeclarative to dev and set dependencies via dependencies.yaml
-      if: steps.cache-build.outputs.cache-hit != 'true'
+      if: steps.cache_artefacts.outputs.cache-hit != 'true'
       working-directory: source
       run: | 
         cmake -DSYNC_TO_MODULE="qtdeclarative" -DSYNC_TO_BRANCH="dev" -P cmake/QtSynchronizeRepo.cmake
@@ -131,16 +134,16 @@ jobs:
     - name: Get current SHA and revision
       id: vars
       run: |
-        [ "${{ steps.cache-build.outputs.cache-hit }}" = "true" ] && {
+        [ "${{ steps.cache_artefacts.outputs.cache-hit }}" = "true" ] && {
+          echo revision=nightly-$(ls qmlls-*.zip | head -n 1 | tr -d "A-z-.") >> $GITHUB_OUTPUT
+        } || {
           cd source/qtdeclarative
           echo revision=$(date "+nightly-%Y%m%d") >> $GITHUB_OUTPUT
           echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-        } || {
-          echo revision=nightly-$(ls qmlls-*.zip | head -n 1 | tr -d "A-z-.") >> $GITHUB_OUTPUT
         }
 
     - name: configure and build
-      if: steps.cache-build.outputs.cache-hit != 'true'
+      if: steps.cache_artefacts.outputs.cache-hit != 'true'
       run:  |
         mkdir build
         cd build
@@ -150,41 +153,43 @@ jobs:
         ninja qmlls
 
     - name: Create info file
-      if: steps.cache-build.outputs.cache-hit != 'true'
+      if: steps.cache_artefacts.outputs.cache-hit != 'true'
       run: |
         echo -e "commit: ${{ steps.vars.outputs.sha_short }}\nbuild: $(date +"%Y-%m-%dT%H:%M:%SZ")" \
         > info.txt
 
     # workarounds because -separate-debug-info is not supported in static builds
     - name: Stripping qmlls binary on linux
-      if: matrix.name == 'ubuntu' && steps.cache-build.outputs.cache-hit != 'true'
+      if: matrix.name == 'ubuntu' && steps.cache_artefacts.outputs.cache-hit != 'true'
       run: |
         objcopy --only-keep-debug ./build/qtbase/bin/qmlls ./build/qtbase/bin/qmlls.dbg
         strip ./build/qtbase/bin/qmlls
         objcopy --add-gnu-debuglink=./build/qtbase/bin/qmlls.dbg ./build/qtbase/bin/qmlls
 
     - name: Stripping qmlls binary on mac
-      if: matrix.name == 'macos' && steps.cache-build.outputs.cache-hit != 'true'
+      if: matrix.name == 'macos' && steps.cache_artefacts.outputs.cache-hit != 'true'
       run: |
         dsymutil ./build/qtbase/bin/qmlls -o ./build/qtbase/bin/qmlls.dSYM
         strip ./build/qtbase/bin/qmlls
 
     - name: Zipping debug symbols and executable
-      if: steps.cache-build.outputs.cache-hit != 'true'
+      if: steps.cache_artefacts.outputs.cache-hit != 'true'
       run: |
+        mkdir artefacts
+        cd artefacts
         7z a qmlls-${{ matrix.name }}-${{ steps.vars.outputs.revision }}-debugsymbols.zip ./build/qtbase/bin/qmlls${{ matrix.debugging_symbols_extension }} info.txt
         7z a qmlls-${{ matrix.name }}-${{ steps.vars.outputs.revision }}${{ matrix.unsigned_suffix }}.zip ./build/qtbase/bin/qmlls${{ matrix.executable_extension }} info.txt
 
     - name: Upload artefact
       uses: actions/upload-artifact@v4
       with:
-        path: qmlls-${{ matrix.name }}-${{ steps.vars.outputs.revision }}${{ matrix.unsigned_suffix }}.zip
+        path: artefacts/qmlls-${{ matrix.name }}-${{ steps.vars.outputs.revision }}${{ matrix.unsigned_suffix }}.zip
         name: qmlls-${{ matrix.name }}-${{ steps.vars.outputs.revision }}${{ matrix.unsigned_suffix }}.zip
 
     - name: Upload artefact with debug symbols
       uses: actions/upload-artifact@v4
       with:
-        path: qmlls-${{ matrix.name }}-${{ steps.vars.outputs.revision }}-debugsymbols.zip
+        path: artefacts/qmlls-${{ matrix.name }}-${{ steps.vars.outputs.revision }}-debugsymbols.zip
         name: qmlls-${{ matrix.name }}-${{ steps.vars.outputs.revision }}-debugsymbols.zip
 
   release:
