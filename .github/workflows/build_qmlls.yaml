@@ -232,5 +232,5 @@ jobs:
         draft: false
         prerelease: true
         # files: ${{ steps.sign-archives.outputs.macos }} ${{ steps.sign-archives.outputs.win-x64 }} release/*/{windows,macos}*-debugsymbols.zip release/*/qmlls-linux-*.zip
-        files: release/*
+        files: release/*/*.zip
 
