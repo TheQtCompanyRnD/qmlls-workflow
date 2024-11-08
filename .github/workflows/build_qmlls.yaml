@@ -129,17 +129,14 @@ jobs:
 
     - name: Get current SHA and revision
       id: vars
-      if: steps.cache-build.outputs.cache-hit != 'true'
       working-directory: source/qtdeclarative
       run: |
-        echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-        echo revision=$(date "+nightly-%Y%m%d") >> $GITHUB_OUTPUT
-
-    - name: Parse revision from cached artefact
-      id: vars
-      if: steps.cache-build.outputs.cache-hit == 'true'
-      working-directory: source/qtdeclarative
-      run: echo revision=nightly-$(ls qmlls-*.zip | head -n 1 | tr -d "A-z-.") >> $GITHUB_OUTPUT
+        [ "${{ steps.cache-build.outputs.cache-hit }}" = "true" ] && {
+          echo revision=$(date "+nightly-%Y%m%d") >> $GITHUB_OUTPUT
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        } || {
+          echo revision=nightly-$(ls qmlls-*.zip | head -n 1 | tr -d "A-z-.") >> $GITHUB_OUTPUT
+        }
 
     - name: configure and build
       if: steps.cache-build.outputs.cache-hit != 'true'
