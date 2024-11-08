@@ -66,6 +66,19 @@ jobs:
         call "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
         set >> "%GITHUB_ENV%"
 
+    - name: get build cache key
+      id: build_cache_key
+      # we build qmlls once per week, so use week number + year as cache key
+      run: echo "key=$(date "+%W.%Y")" >> $GITHUB_OUTPUT
+
+    - name: cache build
+      id: cache-build
+      uses: actions/cache@v4
+      with:
+        path: build
+        key: ${{ runner.os }}-${{ steps.build_cache_key.outputs.key }}-build
+
+
     - name: restore ccache
       uses: actions/cache@v4
       with:
@@ -83,18 +96,6 @@ jobs:
         ccache --set-config cache_dir='${{ runner.temp }}'/ccache
         ccache --set-config compression=true
         ccache --set-config max_size=1G
-
-    - name: get build cache key
-      id: build_cache_key
-      # we build qmlls once per week, so use week number + year as cache key
-      run: echo "key=$(date "+%W.%Y")" >> $GITHUB_OUTPUT
-
-    - name: cache build
-      id: cache-build
-      uses: actions/cache@v4
-      with:
-        path: build
-        key: ${{ runner.os }}-${{ steps.build_cache_key.outputs.key }}-build
 
     - name: cache repository
       id: cache-repo
