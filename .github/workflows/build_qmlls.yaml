@@ -194,8 +194,7 @@ jobs:
   release:
     permissions:
       contents: write
-    # runs-on: signing-runner
-    runs-on: ubuntu-latest
+    runs-on: signing-runner
     environment: Signing credentials
     needs: build
     steps:
@@ -212,15 +211,15 @@ jobs:
         echo unsigned_macos_archive=$(ls release/qmlls-macos-*-unsigned.zip/qmlls-macos-*-unsigned.zip | head -n 1) >> $GITHUB_OUTPUT
         echo unsigned_windows_archive=$(ls release/qmlls-windows-*-unsigned.zip/qmlls-windows-*-unsigned.zip | head -n 1) >> $GITHUB_OUTPUT
 
-  # - name: Sign archives
-  #   id: sign-archives
-  #   uses: TheQtCompanyRnD/SignArchives@v1
-  #   with:
-  #     macos: ${{ steps.vars.outputs.unsigned_macos_archive }}
-  #     win-x64: ${{ steps.vars.outputs.unsigned_windows_archive }}
-  #     jenkins-url: '${{ secrets.JENKINS_URL }}'
-  #     jenkins-user: '${{ secrets.JENKINS_USERNAME }}'
-  #     jenkins-token: '${{ secrets.JENKINS_TOKEN }}'
+    - name: Sign archives
+      id: sign-archives
+      uses: TheQtCompanyRnD/SignArchives@v1
+      with:
+        macos: ${{ steps.vars.outputs.unsigned_macos_archive }}
+        win-x64: ${{ steps.vars.outputs.unsigned_windows_archive }}
+        jenkins-url: '${{ secrets.JENKINS_URL }}'
+        jenkins-user: '${{ secrets.JENKINS_USERNAME }}'
+        jenkins-token: '${{ secrets.JENKINS_TOKEN }}'
 
     - name: Create nightly release
       if: ${{ ! contains(github.ref, 'tags/qmlls-') }}
@@ -233,4 +232,3 @@ jobs:
         prerelease: true
         # files: ${{ steps.sign-archives.outputs.macos }} ${{ steps.sign-archives.outputs.win-x64 }} release/*/{windows,macos}*-debugsymbols.zip release/*/qmlls-linux-*.zip
         files: release/*/*.zip
-
