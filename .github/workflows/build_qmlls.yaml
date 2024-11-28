@@ -176,20 +176,20 @@ jobs:
       if: steps.cache_artefacts.outputs.cache-hit != 'true'
       run: |
         mkdir artefacts
-        7z a artefacts/qmlls-${{ matrix.name }}-${{ steps.vars.outputs.revision }}-debugsymbols.zip ./build/qtbase/bin/qmlls${{ matrix.debugging_symbols_extension }} info.txt
-        7z a artefacts/qmlls-${{ matrix.name }}-${{ steps.vars.outputs.revision }}${{ matrix.unsigned_suffix }}.zip ./build/qtbase/bin/qmlls${{ matrix.executable_extension }} info.txt
+        7z a artefacts/qmlls-${{ matrix.name }}-${{ steps.artefacts_cache_key.outputs.key }}-debugsymbols.zip ./build/qtbase/bin/qmlls${{ matrix.debugging_symbols_extension }} info.txt
+        7z a artefacts/qmlls-${{ matrix.name }}-${{ steps.artefacts_cache_key.outputs.key }}${{ matrix.unsigned_suffix }}.zip ./build/qtbase/bin/qmlls${{ matrix.executable_extension }} info.txt
 
     - name: Upload artefact
       uses: actions/upload-artifact@v4
       with:
-        path: artefacts/qmlls-${{ matrix.name }}-${{ steps.vars.outputs.revision }}${{ matrix.unsigned_suffix }}.zip
-        name: qmlls-${{ matrix.name }}-${{ steps.vars.outputs.revision }}${{ matrix.unsigned_suffix }}.zip
+        path: artefacts/qmlls-${{ matrix.name }}-${{ steps.artefacts_cache_key.outputs.key }}${{ matrix.unsigned_suffix }}.zip
+        name: qmlls-${{ matrix.name }}-${{ steps.artefacts_cache_key.outputs.key }}${{ matrix.unsigned_suffix }}.zip
 
     - name: Upload artefact with debug symbols
       uses: actions/upload-artifact@v4
       with:
-        path: artefacts/qmlls-${{ matrix.name }}-${{ steps.vars.outputs.revision }}-debugsymbols.zip
-        name: qmlls-${{ matrix.name }}-${{ steps.vars.outputs.revision }}-debugsymbols.zip
+        path: artefacts/qmlls-${{ matrix.name }}-${{ steps.artefacts_cache_key.outputs.key }}-debugsymbols.zip
+        name: qmlls-${{ matrix.name }}-${{ steps.artefacts_cache_key.outputs.key }}-debugsymbols.zip
 
   release:
     permissions:
