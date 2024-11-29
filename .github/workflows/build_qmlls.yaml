@@ -183,13 +183,13 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         path: artefacts/qmlls-${{ matrix.name }}-${{ steps.artefacts_cache_key.outputs.key }}${{ matrix.unsigned_suffix }}.zip
-        name: qmlls-${{ matrix.name }}-${{ steps.artefacts_cache_key.outputs.key }}${{ matrix.unsigned_suffix }}.zip
+        name: qmlls-${{ matrix.name }}-nightly-${{ steps.artefacts_cache_key.outputs.key }}${{ matrix.unsigned_suffix }}.zip
 
     - name: Upload artefact with debug symbols
       uses: actions/upload-artifact@v4
       with:
         path: artefacts/qmlls-${{ matrix.name }}-${{ steps.artefacts_cache_key.outputs.key }}-debugsymbols.zip
-        name: qmlls-${{ matrix.name }}-${{ steps.artefacts_cache_key.outputs.key }}-debugsymbols.zip
+        name: qmlls-${{ matrix.name }}-nightly-${{ steps.artefacts_cache_key.outputs.key }}-debugsymbols.zip
 
   release:
     permissions:
@@ -198,6 +198,8 @@ jobs:
     environment: Signing credentials
     needs: build
     steps:
+    - name: Remove old artefacts
+      run: rm -rf weekly_release/*
     - name: Download artifacts
       id: downloaded_artifacts
       uses: actions/download-artifact@v4
@@ -208,8 +210,8 @@ jobs:
       id: vars
       run: |
         echo revision=$(date "+%Y%m%d") >> $GITHUB_OUTPUT
-        echo unsigned_macos_archive=$(ls release/qmlls-macos-*-unsigned.zip/qmlls-macos-*-unsigned.zip | head -n 1) >> $GITHUB_OUTPUT
-        echo unsigned_windows_archive=$(ls release/qmlls-windows-*-unsigned.zip/qmlls-windows-*-unsigned.zip | head -n 1) >> $GITHUB_OUTPUT
+        echo unsigned_macos_archive=$(ls weekly_release/qmlls-macos-*-unsigned.zip/qmlls-macos-*-unsigned.zip | head -n 1) >> $GITHUB_OUTPUT
+        echo unsigned_windows_archive=$(ls weekly_release/qmlls-windows-*-unsigned.zip/qmlls-windows-*-unsigned.zip | head -n 1) >> $GITHUB_OUTPUT
 
     - name: Sign archives
       id: sign-archives
@@ -230,5 +232,5 @@ jobs:
         tag_name: qmlls-nightly-${{ steps.vars.outputs.revision }}
         draft: false
         prerelease: true
-        # files: ${{ steps.sign-archives.outputs.macos }} ${{ steps.sign-archives.outputs.win-x64 }} release/*/{windows,macos}*-debugsymbols.zip release/*/qmlls-linux-*.zip
-        files: release/*/*.zip
+        # files: ${{ steps.sign-archives.outputs.macos }} ${{ steps.sign-archives.outputs.win-x64 }} weekly_release/*/{windows,macos}*-debugsymbols.zip weekly_release/*/qmlls-linux-*.zip
+        files: weekly_release/*/*.zip
