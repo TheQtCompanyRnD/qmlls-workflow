@@ -55,7 +55,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: artefacts
-        key: ${{ runner.os }}-${{ steps.artefacts_cache_key.outputs.key }}-artefacts
+        key: no-icu-${{ runner.os }}-${{ steps.artefacts_cache_key.outputs.key }}-artefacts
 
     - uses: lukka/get-cmake@latest
       if: steps.cache_artefacts.outputs.cache-hit != 'true'
@@ -147,7 +147,7 @@ jobs:
       run:  |
         mkdir build
         cd build
-        ../source/configure -force-debug-info -ccache -no-pch -release -static \
+        ../source/configure -force-debug-info -ccache -no-pch -release -static -no-icu \
           -force-bundled-libs -submodules qtdeclarative -nomake tests -nomake examples \
           -prefix '${{ runner.temp }}'/install_dir -no-sbom ${{ matrix.configure_flags }}
         ninja qmlls
