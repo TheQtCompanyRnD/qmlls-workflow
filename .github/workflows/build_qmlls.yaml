@@ -199,9 +199,7 @@ jobs:
     needs: build
     steps:
     - name: Remove old artefacts
-      run: |
-        mkdir weekly_release
-        rm -rf weekly_release/*
+      run: rm -rf weekly_release; mkdir weekly_release
     - name: Download artifacts
       id: downloaded_artifacts
       uses: actions/download-artifact@v4
