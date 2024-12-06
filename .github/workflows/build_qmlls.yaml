@@ -232,5 +232,4 @@ jobs:
         tag_name: qmlls-nightly-${{ steps.vars.outputs.revision }}
         draft: false
         prerelease: true
-        # files: ${{ steps.sign-archives.outputs.macos }} ${{ steps.sign-archives.outputs.win-x64 }} weekly_release/*/{windows,macos}*-debugsymbols.zip weekly_release/*/qmlls-linux-*.zip
-        files: weekly_release/*/*.zip
+        files: ${{ steps.sign-archives.outputs.macos }} ${{ steps.sign-archives.outputs.win-x64 }} weekly_release/*/qmlls-{windows,macos}*-debugsymbols.zip weekly_release/*/qmlls-linux-*.zip
