@@ -1,0 +1,20 @@
+name: Invalidate cloudfront cache
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+  invalidate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Invalidate CloudFront
+        uses: chetan/invalidate-cloudfront-action@v2
+        env:
+          DISTRIBUTION: ${{ secrets.CLOUDFRONT_ID }}
+          PATHS: "/QMLLS/LatestRelease"
+          AWS_REGION: "us-east-1"
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_INVALIDATE_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_INVALIDATE_SECRET_KEY }}
