@@ -223,6 +223,15 @@ jobs:
         jenkins-user: '${{ secrets.JENKINS_USERNAME }}'
         jenkins-token: '${{ secrets.JENKINS_TOKEN }}'
 
+    - name: Move and rename files
+      run: |
+        mkdir weekly_release/to_be_uploaded
+        revision=nightly-$(cd weekly_release; ls qmlls-linux-*.zip | head -n 1 | tr -d "A-z-./")
+        mv ${{ steps.sign-archives.outputs.macos }} weekly_release/to_be_uploaded/qmlls-macos-nightly-${revision}.zip
+        mv ${{ steps.sign-archives.outputs.win-x64 }} weekly_release/to_be_uploaded/qmlls-windows-nightly-${revision}.zip
+        mv weekly_release/qmlls-linux-nightly-${revision}.zip weekly_release/to_be_uploaded/qmlls-linux-nightly-${revision}.zip
+        mv weekly_release/*-debugsymbols.zip weekly_release/to_be_uploaded/
+
     - name: Create nightly release
       if: ${{ ! contains(github.ref, 'tags/qmlls-') }}
       uses: softprops/action-gh-release@v2
@@ -232,9 +241,4 @@ jobs:
         tag_name: qmlls-nightly-${{ steps.vars.outputs.revision }}
         draft: false
         prerelease: true
-        files: |
-          ${{ steps.sign-archives.outputs.macos }}
-          ${{ steps.sign-archives.outputs.win-x64 }}
-          weekly_release/*/qmlls-windows*-debugsymbols.zip
-          weekly_release/*/qmlls-macos*-debugsymbols.zip
-          weekly_release/*/qmlls-linux-*.zip
+        files: weekly_release/to_be_uploaded/*
