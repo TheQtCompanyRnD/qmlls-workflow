@@ -226,10 +226,10 @@ jobs:
     - name: Move and rename files
       run: |
         mkdir weekly_release/to_be_uploaded
-        revision=nightly-$(cd weekly_release; ls qmlls-linux-*.zip | head -n 1 | tr -d "A-z-./")
-        mv ${{ steps.sign-archives.outputs.macos }} weekly_release/to_be_uploaded/qmlls-macos-nightly-${revision}.zip
-        mv ${{ steps.sign-archives.outputs.win-x64 }} weekly_release/to_be_uploaded/qmlls-windows-nightly-${revision}.zip
-        mv weekly_release/qmlls-linux-nightly-${revision}.zip weekly_release/to_be_uploaded/qmlls-linux-nightly-${revision}.zip
+        revision=nightly-$(cd weekly_release; ls qmlls-ubuntu-*.zip | head -n 1 | tr -d "A-z-./")
+        mv ${{ steps.sign-archives.outputs.macos }} weekly_release/to_be_uploaded/qmlls-macos-${revision}.zip
+        mv ${{ steps.sign-archives.outputs.win-x64 }} weekly_release/to_be_uploaded/qmlls-windows-${revision}.zip
+        mv weekly_release/qmlls-linux-${revision}.zip weekly_release/to_be_uploaded/qmlls-linux-${revision}.zip
         mv weekly_release/*-debugsymbols.zip weekly_release/to_be_uploaded/
 
     - name: Create nightly release
