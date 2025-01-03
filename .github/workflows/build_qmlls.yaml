@@ -221,8 +221,8 @@ jobs:
 
         mv ${{ steps.sign-archives.outputs.macos }} weekly_release/to_be_uploaded/qmlls-macos-${revision}.zip
         mv ${{ steps.sign-archives.outputs.win-x64 }} weekly_release/to_be_uploaded/qmlls-windows-${revision}.zip
-        mv weekly_release/qmlls-ubuntu-${revision}.zip weekly_release/to_be_uploaded/qmlls-linux-${revision}.zip
-        mv weekly_release/*-debugsymbols.zip weekly_release/to_be_uploaded/
+        mv weekly_release/*/qmlls-ubuntu-${revision}.zip weekly_release/to_be_uploaded/qmlls-linux-${revision}.zip
+        mv weekly_release/*/*-debugsymbols.zip weekly_release/to_be_uploaded/
 
     - name: Create nightly release
       if: ${{ ! contains(github.ref, 'tags/qmlls-') }}
