@@ -217,7 +217,7 @@ jobs:
         mkdir weekly_release/to_be_uploaded
 
         # we build qmlls once per week, so use week number + year as cache key
-        revision=nightly-$(date "+%W.%Y")"
+        revision=nightly-$(date "+%W.%Y")
 
         mv ${{ steps.sign-archives.outputs.macos }} weekly_release/to_be_uploaded/qmlls-macos-${revision}.zip
         mv ${{ steps.sign-archives.outputs.win-x64 }} weekly_release/to_be_uploaded/qmlls-windows-${revision}.zip
