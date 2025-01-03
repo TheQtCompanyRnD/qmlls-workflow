@@ -48,7 +48,9 @@ jobs:
     - name: get artefacts cache key
       id: artefacts_cache_key
       # we build qmlls once per week, so use week number + year as cache key
-      run: echo "key=$(date "+%W.%Y")" >> $GITHUB_OUTPUT
+      run: |
+        echo "key=$(date "+%W.%Y")" >> $GITHUB_OUTPUT
+        echo artefact_basename=qmlls-${{ matrix.name }}-nightly-${{ steps.artefacts_cache_key.outputs.key }} >> $GITHUB_OUTPUT
 
     - name: cache artefacts
       id: cache_artefacts
@@ -165,20 +167,20 @@ jobs:
       if: steps.cache_artefacts.outputs.cache-hit != 'true'
       run: |
         mkdir artefacts
-        7z a artefacts/qmlls-${{ matrix.name }}-${{ steps.artefacts_cache_key.outputs.key }}-debugsymbols.zip ./build/qtbase/bin/qmlls${{ matrix.debugging_symbols_extension }} info.txt
-        7z a artefacts/qmlls-${{ matrix.name }}-${{ steps.artefacts_cache_key.outputs.key }}${{ matrix.unsigned_suffix }}.zip ./build/qtbase/bin/qmlls${{ matrix.executable_extension }} info.txt
+        7z a artefacts/${{ steps.artefacts_cache_key.outputs.artefact_basename }}-debugsymbols.zip ./build/qtbase/bin/qmlls${{ matrix.debugging_symbols_extension }} info.txt
+        7z a artefacts/${{ steps.artefacts_cache_key.outputs.artefact_basename }}${{ matrix.unsigned_suffix }}.zip ./build/qtbase/bin/qmlls${{ matrix.executable_extension }} info.txt
 
     - name: Upload artefact
       uses: actions/upload-artifact@v4
       with:
-        path: artefacts/qmlls-${{ matrix.name }}-${{ steps.artefacts_cache_key.outputs.key }}${{ matrix.unsigned_suffix }}.zip
-        name: qmlls-${{ matrix.name }}-nightly-${{ steps.artefacts_cache_key.outputs.key }}${{ matrix.unsigned_suffix }}.zip
+        path: artefacts/${{ steps.artefacts_cache_key.outputs.artefact_basename }}${{ matrix.unsigned_suffix }}.zip
+        name: ${{ steps.artefacts_cache_key.outputs.artefact_basename }}${{ matrix.unsigned_suffix }}.zip
 
     - name: Upload artefact with debug symbols
       uses: actions/upload-artifact@v4
       with:
-        path: artefacts/qmlls-${{ matrix.name }}-${{ steps.artefacts_cache_key.outputs.key }}-debugsymbols.zip
-        name: qmlls-${{ matrix.name }}-nightly-${{ steps.artefacts_cache_key.outputs.key }}-debugsymbols.zip
+        path: artefacts/${{ steps.artefacts_cache_key.outputs.artefact_basename }}-debugsymbols.zip
+        name: ${{ steps.artefacts_cache_key.outputs.artefact_basename }}-debugsymbols.zip
 
   release:
     permissions:
@@ -198,7 +200,9 @@ jobs:
     - name: Get current revision and filenames
       id: vars
       run: |
-        echo revision=$(date "+%Y%m%d") >> $GITHUB_OUTPUT
+        echo cache_key=$(date "+%W.%Y") >> $GITHUB_OUTPUT
+        echo revision=nightly-${cache_key} >> $GITHUB_OUTPUT
+
         echo unsigned_macos_archive=$(ls weekly_release/qmlls-macos-*-unsigned.zip/qmlls-macos-*-unsigned.zip | head -n 1) >> $GITHUB_OUTPUT
         echo unsigned_windows_archive=$(ls weekly_release/qmlls-windows-*-unsigned.zip/qmlls-windows-*-unsigned.zip | head -n 1) >> $GITHUB_OUTPUT
 
@@ -214,15 +218,15 @@ jobs:
 
     - name: Move and rename files
       run: |
+        ls -R # debug output
+
         mkdir weekly_release/to_be_uploaded
-
-        # we build qmlls once per week, so use week number + year as cache key
-        cache_key=$(date "+%W.%Y")
-        revision=nightly-${cache_key}
-
-        mv ${{ steps.sign-archives.outputs.macos }} weekly_release/to_be_uploaded/qmlls-macos-${revision}.zip
-        mv ${{ steps.sign-archives.outputs.win-x64 }} weekly_release/to_be_uploaded/qmlls-windows-${revision}.zip
-        mv weekly_release/*/qmlls-ubuntu-${cache_key}.zip weekly_release/to_be_uploaded/qmlls-linux-${revision}.zip
+        mv ${{ steps.sign-archives.outputs.macos }} \
+          weekly_release/to_be_uploaded/qmlls-macos-${{ steps.vars.outputs.revision }}.zip
+        mv ${{ steps.sign-archives.outputs.win-x64 }} \
+          weekly_release/to_be_uploaded/qmlls-windows-${{ steps.vars.outputs.revision }}.zip
+        mv weekly_release/*/qmlls-ubuntu-${{ steps.vars.outputs.revision }}.zip \
+          weekly_release/to_be_uploaded/qmlls-ubuntu-${{ steps.vars.outputs.revision }}.zip
         mv weekly_release/*/*-debugsymbols.zip weekly_release/to_be_uploaded/
 
     - name: Create nightly release
@@ -231,7 +235,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: qmlls-nightly-${{ steps.vars.outputs.revision }}
+        tag_name: qmlls-nightly-${{ steps.vars.outputs.cache_key }}
         draft: false
         prerelease: true
         files: weekly_release/to_be_uploaded/*
