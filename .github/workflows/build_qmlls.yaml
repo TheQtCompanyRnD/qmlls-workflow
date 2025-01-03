@@ -131,17 +131,6 @@ jobs:
         echo "Using following SHAs: "
         for i in . qtdeclarative qtbase qtimageformats qtlanguageserver qtshadertools qtsvg; do (cd $i; echo "$i: $(git show HEAD -s --format=oneline)";); done;
 
-    - name: Get current SHA and revision
-      id: vars
-      run: |
-        [ "${{ steps.cache_artefacts.outputs.cache-hit }}" = "true" ] && {
-          echo revision=nightly-$(cd artefacts; ls qmlls-*.zip | head -n 1 | tr -d "A-z-./") >> $GITHUB_OUTPUT
-        } || {
-          cd source/qtdeclarative
-          echo revision=$(date "+nightly-%Y%m%d") >> $GITHUB_OUTPUT
-          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-        }
-
     - name: configure and build
       if: steps.cache_artefacts.outputs.cache-hit != 'true'
       run:  |
@@ -155,7 +144,7 @@ jobs:
     - name: Create info file
       if: steps.cache_artefacts.outputs.cache-hit != 'true'
       run: |
-        echo -e "commit: ${{ steps.vars.outputs.sha_short }}\nbuild: $(date +"%Y-%m-%dT%H:%M:%SZ")" \
+        echo -e "commit: $(cd source/qtdeclarative && git rev-parse --short HEAD)\nbuild: $(date +"%Y-%m-%dT%H:%M:%SZ")" \
         > info.txt
 
     # workarounds because -separate-debug-info is not supported in static builds
@@ -226,10 +215,13 @@ jobs:
     - name: Move and rename files
       run: |
         mkdir weekly_release/to_be_uploaded
-        revision=nightly-$(cd weekly_release; ls qmlls-ubuntu-*.zip | head -n 1 | tr -d "A-z-./")
-        mv ${{ steps.sign-archives.outputs.macos }} weekly_release/to_be_uploaded/qmlls-macos-${revision}.zip
-        mv ${{ steps.sign-archives.outputs.win-x64 }} weekly_release/to_be_uploaded/qmlls-windows-${revision}.zip
-        mv weekly_release/qmlls-linux-${revision}.zip weekly_release/to_be_uploaded/qmlls-linux-${revision}.zip
+
+        # we build qmlls once per week, so use week number + year as cache key
+        echo "key=$(date "+%W.%Y")" >> $GITHUB_OUTPUT
+
+        mv ${{ steps.sign-archives.outputs.macos }} weekly_release/to_be_uploaded/qmlls-macos-nightly-${revision}.zip
+        mv ${{ steps.sign-archives.outputs.win-x64 }} weekly_release/to_be_uploaded/qmlls-windows-nightly-${revision}.zip
+        mv weekly_release/qmlls-ubuntu-nightly-${revision}.zip weekly_release/to_be_uploaded/qmlls-linux-nightly-${revision}.zip
         mv weekly_release/*-debugsymbols.zip weekly_release/to_be_uploaded/
 
     - name: Create nightly release
