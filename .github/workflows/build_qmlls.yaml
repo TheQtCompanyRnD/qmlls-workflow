@@ -49,8 +49,9 @@ jobs:
       id: artefacts_cache_key
       # we build qmlls once per week, so use week number + year as cache key
       run: |
-        echo "key=$(date "+%W.%Y")" >> $GITHUB_OUTPUT
-        echo artefact_basename=qmlls-${{ matrix.name }}-nightly-${{ steps.artefacts_cache_key.outputs.key }} >> $GITHUB_OUTPUT
+        key=$(date "+%W.%Y")
+        echo "key=${key}" >> $GITHUB_OUTPUT
+        echo artefact_basename=qmlls-${{ matrix.name }}-nightly-${key} >> $GITHUB_OUTPUT
 
     - name: cache artefacts
       id: cache_artefacts
