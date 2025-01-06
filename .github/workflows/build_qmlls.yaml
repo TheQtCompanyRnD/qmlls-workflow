@@ -200,7 +200,8 @@ jobs:
     - name: Get current revision and filenames
       id: vars
       run: |
-        echo cache_key=$(date "+%W.%Y") >> $GITHUB_OUTPUT
+        cache_key=$(date "+%W.%Y")
+        echo cache_key=${cache_key} >> $GITHUB_OUTPUT
         echo revision=nightly-${cache_key} >> $GITHUB_OUTPUT
 
         echo unsigned_macos_archive=$(ls weekly_release/qmlls-macos-*-unsigned.zip/qmlls-macos-*-unsigned.zip | head -n 1) >> $GITHUB_OUTPUT
