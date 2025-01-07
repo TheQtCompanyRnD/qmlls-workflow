@@ -49,7 +49,7 @@ jobs:
       id: artefacts_cache_key
       # we build qmlls once per week, so use week number + year as cache key
       run: |
-        key=$(date "+%W.%Y")
+        key=$(date "+%Y.%W")
         echo "key=${key}" >> $GITHUB_OUTPUT
         echo artefact_basename=qmlls-${{ matrix.name }}-nightly-${key} >> $GITHUB_OUTPUT
 
@@ -201,7 +201,7 @@ jobs:
     - name: Get current revision and filenames
       id: vars
       run: |
-        cache_key=$(date "+%W.%Y")
+        cache_key=$(date "+%Y.%W")
         echo cache_key=${cache_key} >> $GITHUB_OUTPUT
         echo revision=nightly-${cache_key} >> $GITHUB_OUTPUT
 
