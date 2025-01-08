@@ -18,21 +18,21 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: ubuntu
-            os:   ubuntu-latest
-            deps: libgl-dev libglu-dev 'libxcb*-dev' libx11-xcb-dev libxkbcommon-x11-dev libb2-dev libdouble-conversion-dev
-            tools: ccache
-            install_cmd: sudo apt-get -y install
-            configure_flags: -xcb
-            debugging_symbols_extension: .dbg
-          - name: macos
-            os:   macos-latest
-            deps:
-            tools: ccache
-            install_cmd: HOMEBREW_NO_INSTALL_CLEANUP=1 brew install
-            configure_flags: -- '-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64'
-            debugging_symbols_extension: .dSYM
-            unsigned_suffix: -unsigned
+        ##- name: ubuntu
+        ##  os:   ubuntu-latest
+        ##  deps: libgl-dev libglu-dev 'libxcb*-dev' libx11-xcb-dev libxkbcommon-x11-dev libb2-dev libdouble-conversion-dev
+        ##  tools: ccache
+        ##  install_cmd: sudo apt-get -y install
+        ##  configure_flags: -xcb
+        ##  debugging_symbols_extension: .dbg
+        ##- name: macos
+        ##  os:   macos-latest
+        ##  deps:
+        ##  tools: ccache
+        ##  install_cmd: HOMEBREW_NO_INSTALL_CLEANUP=1 brew install
+        ##  configure_flags: -- '-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64'
+        ##  debugging_symbols_extension: .dSYM
+        ##  unsigned_suffix: -unsigned
           - name: windows
             os:   windows-latest
             install_cmd: choco install
@@ -53,12 +53,15 @@ jobs:
         echo "key=${key}" >> $GITHUB_OUTPUT
         echo artefact_basename=qmlls-${{ matrix.name }}-nightly-${key} >> $GITHUB_OUTPUT
 
-    - name: cache artefacts
+        #  - name: cache artefacts
+        #    id: cache_artefacts
+        #    uses: actions/cache@v4
+        #    with:
+        #      path: artefacts
+        #      key: no-icu-${{ runner.os }}-${{ steps.artefacts_cache_key.outputs.key }}-artefacts
+    - name: disable cache temporarily
       id: cache_artefacts
-      uses: actions/cache@v4
-      with:
-        path: artefacts
-        key: no-icu-${{ runner.os }}-${{ steps.artefacts_cache_key.outputs.key }}-artefacts
+      run: echo "cache-hit=false" >> $GITHUB_OUTPUT
 
     - uses: lukka/get-cmake@latest
       if: steps.cache_artefacts.outputs.cache-hit != 'true'
@@ -144,6 +147,17 @@ jobs:
           -prefix '${{ runner.temp }}'/install_dir -no-sbom ${{ matrix.configure_flags }}
         ninja qmlls
 
+    - name: Cross build to windows ARM
+      if: runner.os == 'Windows' && steps.cache_artefacts.outputs.cache-hit != 'true'
+      run:  |
+        mkdir build-arm
+        cd build-arm
+        ../source/configure -force-debug-info -ccache -no-pch -release -static -no-icu \
+          -force-bundled-libs -submodules qtdeclarative -nomake tests -nomake examples \
+          -prefix '${{ runner.temp }}'/install_dir -no-sbom ${{ matrix.configure_flags }} \
+          -xplatform win32-arm64-msvc -external-hostbindir ../build/qtbase/bin
+        ninja qmlls
+
     - name: Create info file
       if: steps.cache_artefacts.outputs.cache-hit != 'true'
       run: |
@@ -171,6 +185,8 @@ jobs:
         7z a artefacts/${{ steps.artefacts_cache_key.outputs.artefact_basename }}-debugsymbols.zip ./build/qtbase/bin/qmlls${{ matrix.debugging_symbols_extension }} info.txt
         7z a artefacts/${{ steps.artefacts_cache_key.outputs.artefact_basename }}${{ matrix.unsigned_suffix }}.zip ./build/qtbase/bin/qmlls${{ matrix.executable_extension }} info.txt
 
+    # TODO: zip arm build files!
+
     - name: Upload artefact
       uses: actions/upload-artifact@v4
       with:
@@ -183,61 +199,61 @@ jobs:
         path: artefacts/${{ steps.artefacts_cache_key.outputs.artefact_basename }}-debugsymbols.zip
         name: ${{ steps.artefacts_cache_key.outputs.artefact_basename }}-debugsymbols.zip
 
-  release:
-    permissions:
-      contents: write
-    runs-on: signing-runner
-    environment: Signing credentials
-    needs: build
-    steps:
-    - name: Remove old artefacts
-      run: rm -rf weekly_release; mkdir weekly_release
-    - name: Download artifacts
-      id: downloaded_artifacts
-      uses: actions/download-artifact@v4
-      with:
-        path: weekly_release
+        ## release:
+        ##   permissions:
+        ##     contents: write
+        ##   runs-on: signing-runner
+        ##   environment: Signing credentials
+        ##   needs: build
+        ##   steps:
+        ##   - name: Remove old artefacts
+        ##     run: rm -rf weekly_release; mkdir weekly_release
+        ##   - name: Download artifacts
+        ##     id: downloaded_artifacts
+        ##     uses: actions/download-artifact@v4
+        ##     with:
+        ##       path: weekly_release
 
-    - name: Get current revision and filenames
-      id: vars
-      run: |
-        cache_key=$(date "+%Y.%W")
-        echo cache_key=${cache_key} >> $GITHUB_OUTPUT
-        echo revision=nightly-${cache_key} >> $GITHUB_OUTPUT
+        ##   - name: Get current revision and filenames
+        ##     id: vars
+        ##     run: |
+        ##       cache_key=$(date "+%Y.%W")
+        ##       echo cache_key=${cache_key} >> $GITHUB_OUTPUT
+        ##       echo revision=nightly-${cache_key} >> $GITHUB_OUTPUT
 
-        echo unsigned_macos_archive=$(ls weekly_release/qmlls-macos-*-unsigned.zip/qmlls-macos-*-unsigned.zip | head -n 1) >> $GITHUB_OUTPUT
-        echo unsigned_windows_archive=$(ls weekly_release/qmlls-windows-*-unsigned.zip/qmlls-windows-*-unsigned.zip | head -n 1) >> $GITHUB_OUTPUT
+        ##       echo unsigned_macos_archive=$(ls weekly_release/qmlls-macos-*-unsigned.zip/qmlls-macos-*-unsigned.zip | head -n 1) >> $GITHUB_OUTPUT
+        ##       echo unsigned_windows_archive=$(ls weekly_release/qmlls-windows-*-unsigned.zip/qmlls-windows-*-unsigned.zip | head -n 1) >> $GITHUB_OUTPUT
 
-    - name: Sign archives
-      id: sign-archives
-      uses: TheQtCompanyRnD/SignArchives@v1
-      with:
-        macos: ${{ steps.vars.outputs.unsigned_macos_archive }}
-        win-x64: ${{ steps.vars.outputs.unsigned_windows_archive }}
-        jenkins-url: '${{ secrets.JENKINS_URL }}'
-        jenkins-user: '${{ secrets.JENKINS_USERNAME }}'
-        jenkins-token: '${{ secrets.JENKINS_TOKEN }}'
+        ##   - name: Sign archives
+        ##     id: sign-archives
+        ##     uses: TheQtCompanyRnD/SignArchives@v1
+        ##     with:
+        ##       macos: ${{ steps.vars.outputs.unsigned_macos_archive }}
+        ##       win-x64: ${{ steps.vars.outputs.unsigned_windows_archive }}
+        ##       jenkins-url: '${{ secrets.JENKINS_URL }}'
+        ##       jenkins-user: '${{ secrets.JENKINS_USERNAME }}'
+        ##       jenkins-token: '${{ secrets.JENKINS_TOKEN }}'
 
-    - name: Move and rename files
-      run: |
-        ls -R # debug output
+        ##   - name: Move and rename files
+        ##     run: |
+        ##       ls -R # debug output
 
-        mkdir weekly_release/to_be_uploaded
-        mv ${{ steps.sign-archives.outputs.macos }} \
-          weekly_release/to_be_uploaded/qmlls-macos-${{ steps.vars.outputs.revision }}.zip
-        mv ${{ steps.sign-archives.outputs.win-x64 }} \
-          weekly_release/to_be_uploaded/qmlls-windows-${{ steps.vars.outputs.revision }}.zip
-        mv weekly_release/*/qmlls-ubuntu-${{ steps.vars.outputs.revision }}.zip \
-          weekly_release/to_be_uploaded/qmlls-ubuntu-${{ steps.vars.outputs.revision }}.zip
-        mv weekly_release/*/*-debugsymbols.zip weekly_release/to_be_uploaded/
+        ##       mkdir weekly_release/to_be_uploaded
+        ##       mv ${{ steps.sign-archives.outputs.macos }} \
+        ##         weekly_release/to_be_uploaded/qmlls-macos-${{ steps.vars.outputs.revision }}.zip
+        ##       mv ${{ steps.sign-archives.outputs.win-x64 }} \
+        ##         weekly_release/to_be_uploaded/qmlls-windows-${{ steps.vars.outputs.revision }}.zip
+        ##       mv weekly_release/*/qmlls-ubuntu-${{ steps.vars.outputs.revision }}.zip \
+        ##         weekly_release/to_be_uploaded/qmlls-ubuntu-${{ steps.vars.outputs.revision }}.zip
+        ##       mv weekly_release/*/*-debugsymbols.zip weekly_release/to_be_uploaded/
 
-    - name: Create nightly release
-      if: ${{ ! contains(github.ref, 'tags/qmlls-') }}
-      uses: softprops/action-gh-release@v2
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: qmlls-nightly-${{ steps.vars.outputs.cache_key }}
-        draft: false
-        prerelease: true
-        files: weekly_release/to_be_uploaded/*
+        ##   - name: Create nightly release
+        ##     if: ${{ ! contains(github.ref, 'tags/qmlls-') }}
+        ##     uses: softprops/action-gh-release@v2
+        ##     env:
+        ##       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        ##     with:
+        ##       tag_name: qmlls-nightly-${{ steps.vars.outputs.cache_key }}
+        ##       draft: false
+        ##       prerelease: true
+        ##       files: weekly_release/to_be_uploaded/*
