@@ -168,20 +168,20 @@ jobs:
       if: steps.cache_artefacts.outputs.cache-hit != 'true'
       run: |
         mkdir artefacts
-        7z a artefacts/${{ steps.artefacts_cache_key.outputs.artefact_basename }}-debugsymbols.zip ./build/qtbase/bin/qmlls${{ matrix.debugging_symbols_extension }} info.txt
-        7z a artefacts/${{ steps.artefacts_cache_key.outputs.artefact_basename }}${{ matrix.unsigned_suffix }}.zip ./build/qtbase/bin/qmlls${{ matrix.executable_extension }} info.txt
+        7z a artefacts/${{ steps.artefacts_cache_key.outputs.artefact_basename }}-debugsymbols.7z ./build/qtbase/bin/qmlls${{ matrix.debugging_symbols_extension }} info.txt
+        7z a artefacts/${{ steps.artefacts_cache_key.outputs.artefact_basename }}${{ matrix.unsigned_suffix }}.7z ./build/qtbase/bin/qmlls${{ matrix.executable_extension }} info.txt
 
     - name: Upload artefact
       uses: actions/upload-artifact@v4
       with:
-        path: artefacts/${{ steps.artefacts_cache_key.outputs.artefact_basename }}${{ matrix.unsigned_suffix }}.zip
-        name: ${{ steps.artefacts_cache_key.outputs.artefact_basename }}${{ matrix.unsigned_suffix }}.zip
+        path: artefacts/${{ steps.artefacts_cache_key.outputs.artefact_basename }}${{ matrix.unsigned_suffix }}.7z
+        name: ${{ steps.artefacts_cache_key.outputs.artefact_basename }}${{ matrix.unsigned_suffix }}.7z
 
     - name: Upload artefact with debug symbols
       uses: actions/upload-artifact@v4
       with:
-        path: artefacts/${{ steps.artefacts_cache_key.outputs.artefact_basename }}-debugsymbols.zip
-        name: ${{ steps.artefacts_cache_key.outputs.artefact_basename }}-debugsymbols.zip
+        path: artefacts/${{ steps.artefacts_cache_key.outputs.artefact_basename }}-debugsymbols.7z
+        name: ${{ steps.artefacts_cache_key.outputs.artefact_basename }}-debugsymbols.7z
 
   release:
     permissions:
@@ -205,8 +205,8 @@ jobs:
         echo cache_key=${cache_key} >> $GITHUB_OUTPUT
         echo revision=nightly-${cache_key} >> $GITHUB_OUTPUT
 
-        echo unsigned_macos_archive=$(ls weekly_release/qmlls-macos-*-unsigned.zip/qmlls-macos-*-unsigned.zip | head -n 1) >> $GITHUB_OUTPUT
-        echo unsigned_windows_archive=$(ls weekly_release/qmlls-windows-*-unsigned.zip/qmlls-windows-*-unsigned.zip | head -n 1) >> $GITHUB_OUTPUT
+        echo unsigned_macos_archive=$(ls weekly_release/qmlls-macos-*-unsigned.7z/qmlls-macos-*-unsigned.7z | head -n 1) >> $GITHUB_OUTPUT
+        echo unsigned_windows_archive=$(ls weekly_release/qmlls-windows-*-unsigned.7z/qmlls-windows-*-unsigned.7z | head -n 1) >> $GITHUB_OUTPUT
 
     - name: Sign archives
       id: sign-archives
@@ -224,12 +224,12 @@ jobs:
 
         mkdir weekly_release/to_be_uploaded
         mv ${{ steps.sign-archives.outputs.macos }} \
-          weekly_release/to_be_uploaded/qmlls-macos-${{ steps.vars.outputs.revision }}.zip
+          weekly_release/to_be_uploaded/qmlls-macos-${{ steps.vars.outputs.revision }}.7z
         mv ${{ steps.sign-archives.outputs.win-x64 }} \
-          weekly_release/to_be_uploaded/qmlls-windows-${{ steps.vars.outputs.revision }}.zip
-        mv weekly_release/*/qmlls-ubuntu-${{ steps.vars.outputs.revision }}.zip \
-          weekly_release/to_be_uploaded/qmlls-ubuntu-${{ steps.vars.outputs.revision }}.zip
-        mv weekly_release/*/*-debugsymbols.zip weekly_release/to_be_uploaded/
+          weekly_release/to_be_uploaded/qmlls-windows-${{ steps.vars.outputs.revision }}.7z
+        mv weekly_release/*/qmlls-ubuntu-${{ steps.vars.outputs.revision }}.7z \
+          weekly_release/to_be_uploaded/qmlls-ubuntu-${{ steps.vars.outputs.revision }}.7z
+        mv weekly_release/*/*-debugsymbols.7z weekly_release/to_be_uploaded/
 
     - name: Create nightly release
       if: ${{ ! contains(github.ref, 'tags/qmlls-') }}
