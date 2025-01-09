@@ -227,7 +227,7 @@ jobs:
 
         # the signing job returns .7z files, but we want .zip for our clients.
         function repack {
-          mkdir tmp
+          rm -rf tmp; mkdir tmp
           cd tmp
           7z x "../$1"
           7z a "../$2" *
