@@ -68,10 +68,7 @@ jobs:
 
     - name: prepare Linux
       if: runner.os == 'Linux' && steps.cache_artefacts.outputs.cache-hit != 'true'
-      run: |
-        sudo apt-get update
-        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100
-        sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 100
+      run: sudo apt-get update
     - name: prepare macOS
       if: runner.os == 'macOS' && steps.cache_artefacts.outputs.cache-hit != 'true'
       run: echo noop
