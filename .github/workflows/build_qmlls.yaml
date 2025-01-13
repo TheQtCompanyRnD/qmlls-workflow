@@ -215,15 +215,28 @@ jobs:
         jenkins-user: '${{ secrets.JENKINS_USERNAME }}'
         jenkins-token: '${{ secrets.JENKINS_TOKEN }}'
 
-    - name: Move and rename files
+    - name: Move and rename files and repack from .7z to .zip
       run: |
         ls -R # debug output
 
         mkdir weekly_release/to_be_uploaded
-        mv ${{ steps.sign-archives.outputs.macos }} \
+        mkdir weekly_release/windows
+
+        # the signing job returns .7z files, but we want .zip for our clients.
+        function repack {
+          rm -rf tmp; mkdir tmp
+          cd tmp
+          7z x "../$1"
+          7z a "../$2" *
+          cd ..
+          rm -rf tmp
+        }
+
+        repack ${{ steps.sign-archives.outputs.macos }} \
           weekly_release/to_be_uploaded/qmlls-macos-${{ steps.vars.outputs.revision }}.zip
-        mv ${{ steps.sign-archives.outputs.win-x64 }} \
+        repack ${{ steps.sign-archives.outputs.win-x64 }} \
           weekly_release/to_be_uploaded/qmlls-windows-${{ steps.vars.outputs.revision }}.zip
+
         mv weekly_release/*/qmlls-ubuntu-${{ steps.vars.outputs.revision }}.zip \
           weekly_release/to_be_uploaded/qmlls-ubuntu-${{ steps.vars.outputs.revision }}.zip
         mv weekly_release/*/*-debugsymbols.zip weekly_release/to_be_uploaded/
