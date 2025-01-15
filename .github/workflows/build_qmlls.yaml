@@ -31,6 +31,7 @@ jobs:
             tools: ccache
             install_cmd: HOMEBREW_NO_INSTALL_CLEANUP=1 brew install
             configure_flags: -- '-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64'
+            qmlls_configure_flags: -DCMAKE_OSX_ARCHITECTURES=x86_64;arm64
             debugging_symbols_extension: .dSYM
             unsigned_suffix: -unsigned
           - name: windows
@@ -58,7 +59,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: artefacts
-        key: no-icu-${{ runner.os }}-${{ steps.artefacts_cache_key.outputs.key }}-artefacts
+        key: ${{ runner.os }}-${{ steps.artefacts_cache_key.outputs.key }}-artefacts
 
     - uses: lukka/get-cmake@latest
       if: steps.cache_artefacts.outputs.cache-hit != 'true'
@@ -113,7 +114,7 @@ jobs:
       run:  |
         git clone https://code.qt.io/qt/qt5.git source
         cd source
-        ./init-repository --module-subset=qtdeclarative
+        ./init-repository --module-subset=qtdeclarative,qttools
 
     - name: update cached repository
       if: steps.cache-repo.outputs.cache-hit == 'true' && steps.cache_artefacts.outputs.cache-hit != 'true'
@@ -130,16 +131,25 @@ jobs:
         cmake -DSYNC_TO_MODULE="qtdeclarative" -DSYNC_TO_BRANCH="dev" -P cmake/QtSynchronizeRepo.cmake
         echo "Using following SHAs: "
         for i in . qtdeclarative qtbase qtimageformats qtlanguageserver qtshadertools qtsvg; do (cd $i; echo "$i: $(git show HEAD -s --format=oneline)";); done;
+        (cd qttools; git checkout dev; git pull; git submodule update;)
 
-    - name: configure and build
+    - name: configure and build Qt
       if: steps.cache_artefacts.outputs.cache-hit != 'true'
       run:  |
-        mkdir build
-        cd build
+        mkdir qt-build
+        cd qt-build
         ../source/configure -force-debug-info -ccache -no-pch -release -static -no-icu \
-          -force-bundled-libs -submodules qtdeclarative -nomake tests -nomake examples \
+          -force-bundled-libs -submodules qtdeclarative,qttools -nomake tests -nomake examples \
           -prefix '${{ runner.temp }}'/install_dir -no-sbom ${{ matrix.configure_flags }}
-        ninja qmlls
+        ninja qtdeclarative qtbase qttools
+
+    - name: configure and build Qmlls
+      if: steps.cache_artefacts.outputs.cache-hit != 'true'
+      run:  |
+        mkdir qmlls-build
+        cd qmlls-build
+        ../qt-build/qtbase/bin/qt-cmake -S .. -B . -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo ${{ matrix.qmlls_configure_flags }}
+        ninja
 
     - name: Create info file
       if: steps.cache_artefacts.outputs.cache-hit != 'true'
@@ -147,26 +157,25 @@ jobs:
         echo -e "commit: $(cd source/qtdeclarative && git rev-parse --short HEAD)\nbuild: $(date +"%Y-%m-%dT%H:%M:%SZ")" \
         > info.txt
 
-    # workarounds because -separate-debug-info is not supported in static builds
     - name: Stripping qmlls binary on linux
       if: matrix.name == 'ubuntu' && steps.cache_artefacts.outputs.cache-hit != 'true'
       run: |
-        objcopy --only-keep-debug ./build/qtbase/bin/qmlls ./build/qtbase/bin/qmlls.dbg
-        strip ./build/qtbase/bin/qmlls
-        objcopy --add-gnu-debuglink=./build/qtbase/bin/qmlls.dbg ./build/qtbase/bin/qmlls
+        objcopy --only-keep-debug ./qmlls-build/qmlls ./qmlls-build/qmlls.dbg
+        strip ./qmlls-build/qmlls
+        objcopy --add-gnu-debuglink=./qmlls-build/qmlls.dbg ./qmlls-build/qmlls
 
     - name: Stripping qmlls binary on mac
       if: matrix.name == 'macos' && steps.cache_artefacts.outputs.cache-hit != 'true'
       run: |
-        dsymutil ./build/qtbase/bin/qmlls -o ./build/qtbase/bin/qmlls.dSYM
-        strip ./build/qtbase/bin/qmlls
+        dsymutil ./qmlls-build/qmlls -o ./qmlls-build/qmlls.dSYM
+        strip ./qmlls-build/qmlls
 
     - name: Zipping debug symbols and executable
       if: steps.cache_artefacts.outputs.cache-hit != 'true'
       run: |
         mkdir artefacts
-        7z a artefacts/${{ steps.artefacts_cache_key.outputs.artefact_basename }}-debugsymbols.zip ./build/qtbase/bin/qmlls${{ matrix.debugging_symbols_extension }} info.txt
-        7z a artefacts/${{ steps.artefacts_cache_key.outputs.artefact_basename }}${{ matrix.unsigned_suffix }}.zip ./build/qtbase/bin/qmlls${{ matrix.executable_extension }} info.txt
+        7z a artefacts/${{ steps.artefacts_cache_key.outputs.artefact_basename }}-debugsymbols.zip ./qmlls-build/qtbase/bin/qmlls${{ matrix.debugging_symbols_extension }} info.txt
+        7z a artefacts/${{ steps.artefacts_cache_key.outputs.artefact_basename }}${{ matrix.unsigned_suffix }}.zip ./qmlls-build/qtbase/bin/qmlls${{ matrix.executable_extension }} info.txt
 
     - name: Upload artefact
       uses: actions/upload-artifact@v4
