@@ -149,15 +149,16 @@ jobs:
         ninja qtdeclarative qtbase qttools
 
     - uses: actions/checkout@v4
+      if: steps.cache_artefacts.outputs.cache-hit != 'true'
       with:
-        path: source
+        path: qmlls-workflow-source
 
     - name: configure and build Qmlls
       if: steps.cache_artefacts.outputs.cache-hit != 'true'
       run:  |
         rm -rf qmlls-build; mkdir qmlls-build
         cd qmlls-build
-        ../qt-build/qtbase/bin/qt-cmake -S ../source -B . -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo ${{ matrix.qmlls_configure_flags }}
+        ../qt-build/qtbase/bin/qt-cmake -S ../qmlls-workflow-source -B . -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo ${{ matrix.qmlls_configure_flags }}
         ninja
 
     - name: Create info file
