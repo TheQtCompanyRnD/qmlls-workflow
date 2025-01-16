@@ -141,7 +141,7 @@ jobs:
     - name: configure and build Qt
       if: steps.cache_artefacts.outputs.cache-hit != 'true'
       run:  |
-        rm -rf qt-build: mkdir qt-build
+        rm -rf qt-build; mkdir qt-build
         cd qt-build
         ../source/configure -force-debug-info -ccache -no-pch -release -static -no-icu \
           -force-bundled-libs -submodules qtdeclarative,qttools -nomake tests -nomake examples \
