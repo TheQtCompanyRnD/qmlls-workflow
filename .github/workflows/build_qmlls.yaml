@@ -106,7 +106,7 @@ jobs:
 
     - name: cache repository
       id: cache-repo
-      uses: actions/cache@v4
+      uses: actions/cache/restore@v4
       if: steps.cache_artefacts.outputs.cache-hit != 'true'
       with:
         path: source
@@ -137,6 +137,13 @@ jobs:
         (cd qttools; git checkout dev; git pull; git submodule update;)
         echo "Using following SHAs: "
         for i in . qtdeclarative qtbase qtimageformats qtlanguageserver qtshadertools qtsvg qttools; do (cd $i; echo "$i: $(git show HEAD -s --format=oneline)";); done;
+
+    - name: save cached repository
+      if: always() && steps.cache_artefacts.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: source
+        key: ${{ runner.os }}-qt5repo
 
     - name: cache qt build ### TODO: to be removed before merging into dev
       id: cache_qt_build
