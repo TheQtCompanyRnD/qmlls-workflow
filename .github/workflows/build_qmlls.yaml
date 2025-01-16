@@ -145,7 +145,7 @@ jobs:
         cd qt-build
         ../source/configure -force-debug-info -ccache -no-pch -release -static -no-icu \
           -force-bundled-libs -submodules qtdeclarative,qttools -nomake tests -nomake examples \
-          -prefix '${{ runner.temp }}'/install_dir -no-sbom ${{ matrix.configure_flags }}
+          -no-prefix -no-sbom ${{ matrix.configure_flags }}
         ninja qtdeclarative qtbase qttools
 
     - uses: actions/checkout@v4
