@@ -138,8 +138,16 @@ jobs:
         echo "Using following SHAs: "
         for i in . qtdeclarative qtbase qtimageformats qtlanguageserver qtshadertools qtsvg qttools; do (cd $i; echo "$i: $(git show HEAD -s --format=oneline)";); done;
 
-    - name: configure and build Qt
+    - name: cache qt build ### TODO: to be removed before merging into dev
+      id: cache_qt_build
+      uses: actions/cache@v4
       if: steps.cache_artefacts.outputs.cache-hit != 'true'
+      with:
+        path: qt-build
+        key: ${{ runner.os }}-qt5build
+
+    - name: configure and build Qt
+      if: steps.cache_artefacts.outputs.cache-hit != 'true' && steps.cache_qt_build.outputs.cache-hit != 'true'
       run:  |
         rm -rf qt-build; mkdir qt-build
         cd qt-build
