@@ -69,7 +69,10 @@ jobs:
 
     - name: prepare Linux
       if: runner.os == 'Linux' && steps.cache_artefacts.outputs.cache-hit != 'true'
-      run: sudo apt-get update
+      run: |
+        sudo apt-get update
+        # try to make more disk space by removing unused things
+        rm -rf /usr/local/lib/android/sdk;
     - name: prepare macOS
       if: runner.os == 'macOS' && steps.cache_artefacts.outputs.cache-hit != 'true'
       run: echo noop
@@ -121,34 +124,39 @@ jobs:
       working-directory: source
       run: |
         git fetch
+        git submodule foreach --recursive git gc --auto # try to save some disk space
         cd qtdeclarative
         git reset --hard origin/dev
+        git fetch https://codereview.qt-project.org/qt/qtdeclarative refs/changes/41/617341/3 && git cherry-pick FETCH_HEAD # TODO: remove me once patch got merged
 
     - name: set qtdeclarative to dev and set dependencies via dependencies.yaml
       if: steps.cache_artefacts.outputs.cache-hit != 'true'
       working-directory: source
       run: | 
         cmake -DSYNC_TO_MODULE="qtdeclarative" -DSYNC_TO_BRANCH="dev" -P cmake/QtSynchronizeRepo.cmake
-        echo "Using following SHAs: "
-        for i in . qtdeclarative qtbase qtimageformats qtlanguageserver qtshadertools qtsvg; do (cd $i; echo "$i: $(git show HEAD -s --format=oneline)";); done;
         (cd qttools; git checkout dev; git pull; git submodule update;)
+        echo "Using following SHAs: "
+        for i in . qtdeclarative qtbase qtimageformats qtlanguageserver qtshadertools qtsvg qttools; do (cd $i; echo "$i: $(git show HEAD -s --format=oneline)";); done;
 
     - name: configure and build Qt
       if: steps.cache_artefacts.outputs.cache-hit != 'true'
       run:  |
-        mkdir qt-build
+        rm -rf qt-build: mkdir qt-build
         cd qt-build
         ../source/configure -force-debug-info -ccache -no-pch -release -static -no-icu \
           -force-bundled-libs -submodules qtdeclarative,qttools -nomake tests -nomake examples \
           -prefix '${{ runner.temp }}'/install_dir -no-sbom ${{ matrix.configure_flags }}
         ninja qtdeclarative qtbase qttools
 
+    - uses: actions/checkout@v4
+      path: source
+
     - name: configure and build Qmlls
       if: steps.cache_artefacts.outputs.cache-hit != 'true'
       run:  |
-        mkdir qmlls-build
+        rm -rf qmlls-build; mkdir qmlls-build
         cd qmlls-build
-        ../qt-build/qtbase/bin/qt-cmake -S .. -B . -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo ${{ matrix.qmlls_configure_flags }}
+        ../qt-build/qtbase/bin/qt-cmake -S ../source -B . -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo ${{ matrix.qmlls_configure_flags }}
         ninja
 
     - name: Create info file
