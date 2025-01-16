@@ -72,7 +72,7 @@ jobs:
       run: |
         sudo apt-get update
         # try to make more disk space by removing unused things
-        rm -rf /usr/local/lib/android/sdk;
+        sudo rm -rf /usr/local/lib/android/sdk
     - name: prepare macOS
       if: runner.os == 'macOS' && steps.cache_artefacts.outputs.cache-hit != 'true'
       run: echo noop
