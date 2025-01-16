@@ -149,7 +149,8 @@ jobs:
         ninja qtdeclarative qtbase qttools
 
     - uses: actions/checkout@v4
-      path: source
+      with:
+        path: source
 
     - name: configure and build Qmlls
       if: steps.cache_artefacts.outputs.cache-hit != 'true'
