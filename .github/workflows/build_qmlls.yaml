@@ -31,7 +31,7 @@ jobs:
             tools: ccache
             install_cmd: HOMEBREW_NO_INSTALL_CLEANUP=1 brew install
             configure_flags: -- '-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64'
-            qmlls_configure_flags: '-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64'
+            qmlls_configure_flags: \'-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64\'
             debugging_symbols_extension: .dSYM
             unsigned_suffix: -unsigned
           - name: windows
