@@ -30,8 +30,8 @@ jobs:
             deps:
             tools: ccache
             install_cmd: HOMEBREW_NO_INSTALL_CLEANUP=1 brew install
-            configure_flags: -- '-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64'
-            qmlls_configure_flags: \'-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64\'
+            configure_flags: "-- '-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64'"
+            qmlls_configure_flags: "'-DCMAKE_OSX_ARCHITECTURES='x86_64;arm64'"
             debugging_symbols_extension: .dSYM
             unsigned_suffix: -unsigned
           - name: windows
@@ -213,8 +213,8 @@ jobs:
       if: steps.cache_artefacts.outputs.cache-hit != 'true'
       run: |
         mkdir artefacts
-        7z a artefacts/${{ steps.artefacts_cache_key.outputs.artefact_basename }}-debugsymbols.zip ./qmlls-build/qtbase/bin/qmlls${{ matrix.debugging_symbols_extension }} info.txt
-        7z a artefacts/${{ steps.artefacts_cache_key.outputs.artefact_basename }}${{ matrix.unsigned_suffix }}.zip ./qmlls-build/qtbase/bin/qmlls${{ matrix.executable_extension }} info.txt
+        7z a artefacts/${{ steps.artefacts_cache_key.outputs.artefact_basename }}-debugsymbols.zip ./qmlls-build/qmlls${{ matrix.debugging_symbols_extension }} info.txt
+        7z a artefacts/${{ steps.artefacts_cache_key.outputs.artefact_basename }}${{ matrix.unsigned_suffix }}.zip ./qmlls-build/qmlls${{ matrix.executable_extension }} info.txt
 
     - name: Upload artefact
       uses: actions/upload-artifact@v4
