@@ -31,7 +31,7 @@ jobs:
             tools: ccache
             install_cmd: HOMEBREW_NO_INSTALL_CLEANUP=1 brew install
             configure_flags: -- '-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64'
-            qmlls_configure_flags: -DCMAKE_OSX_ARCHITECTURES=x86_64;arm64
+            qmlls_configure_flags: '-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64'
             debugging_symbols_extension: .dSYM
             unsigned_suffix: -unsigned
           - name: windows
@@ -42,6 +42,7 @@ jobs:
             configure_flags: -no-feature-sql-psql -no-feature-sql-mysql -no-feature-sql-odbc
             debugging_symbols_extension: .pdb
             executable_extension: .exe
+            script_extension: .bat
             unsigned_suffix: -unsigned
     runs-on: ${{ matrix.os }}
 
@@ -72,7 +73,12 @@ jobs:
       run: |
         sudo apt-get update
         # try to make more disk space by removing unused things
-        sudo rm -rf /usr/local/lib/android/sdk
+        apt list --installed || true # if more stuff needs to be removed
+        pip --list || true # if more stuff needs to be removed
+        sudo apt-get purge firefox chromium-browser microsoft-edge-stable google-chrome-stable || true
+        sudo apt-get autoremove || true
+        sudo rm -rf /usr/local/lib/android/sdk || true
+
     - name: prepare macOS
       if: runner.os == 'macOS' && steps.cache_artefacts.outputs.cache-hit != 'true'
       run: echo noop
@@ -135,6 +141,7 @@ jobs:
       run: | 
         cmake -DSYNC_TO_MODULE="qtdeclarative" -DSYNC_TO_BRANCH="dev" -P cmake/QtSynchronizeRepo.cmake
         (cd qttools; git checkout dev; git pull; git submodule update;)
+        (cd qtdeclarative; git fetch https://codereview.qt-project.org/qt/qtdeclarative refs/changes/41/617341/3 && git cherry-pick FETCH_HEAD) # TODO: remove me once patch got merged
         echo "Using following SHAs: "
         for i in . qtdeclarative qtbase qtimageformats qtlanguageserver qtshadertools qtsvg qttools; do (cd $i; echo "$i: $(git show HEAD -s --format=oneline)";); done;
 
@@ -180,7 +187,7 @@ jobs:
       run:  |
         rm -rf qmlls-build; mkdir qmlls-build
         cd qmlls-build
-        ../qt-build/qtbase/bin/qt-cmake -S ../qmlls-workflow-source -B . -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo ${{ matrix.qmlls_configure_flags }}
+        ../qt-build/qtbase/bin/qt-cmake${{ matrix.script_extension }} -S ../qmlls-workflow-source -B . -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo ${{ matrix.qmlls_configure_flags }}
         ninja
 
     - name: Create info file
