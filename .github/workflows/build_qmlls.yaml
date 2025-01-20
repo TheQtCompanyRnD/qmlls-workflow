@@ -31,7 +31,7 @@ jobs:
             tools: ccache
             install_cmd: HOMEBREW_NO_INSTALL_CLEANUP=1 brew install
             configure_flags: "-- '-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64'"
-            qmlls_configure_flags: "'-DCMAKE_OSX_ARCHITECTURES='x86_64;arm64'"
+            qmlls_configure_flags: "'-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64'"
             debugging_symbols_extension: .dSYM
             unsigned_suffix: -unsigned
           - name: windows
@@ -73,11 +73,14 @@ jobs:
       run: |
         sudo apt-get update
         # try to make more disk space by removing unused things
-        apt list --installed || true # if more stuff needs to be removed
+        # apt list --installed || true # if more stuff needs to be removed
+        echo List of installed packages:
+        dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -rn
         pip --list || true # if more stuff needs to be removed
-        sudo apt-get purge firefox chromium-browser microsoft-edge-stable google-chrome-stable || true
+        sudo apt-get purge firefox chromium-browser microsoft-edge-stable google-chrome-stable apache2 mysql-server mysql-common "php*" "ruby*"  || true
         sudo apt-get autoremove || true
         sudo rm -rf /usr/local/lib/android/sdk || true
+        sudo apt-get clean || true
 
     - name: prepare macOS
       if: runner.os == 'macOS' && steps.cache_artefacts.outputs.cache-hit != 'true'
@@ -189,6 +192,10 @@ jobs:
         cd qmlls-build
         ../qt-build/qtbase/bin/qt-cmake${{ matrix.script_extension }} -S ../qmlls-workflow-source -B . -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo ${{ matrix.qmlls_configure_flags }}
         ninja
+
+    - name: Remove Qt Build to save disk space
+      if: steps.cache_artefacts.outputs.cache-hit != 'true'
+      run: rm -rf qt-build
 
     - name: Create info file
       if: steps.cache_artefacts.outputs.cache-hit != 'true'
