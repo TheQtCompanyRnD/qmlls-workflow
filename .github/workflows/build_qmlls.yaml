@@ -264,8 +264,7 @@ jobs:
         echo unsigned_windows_archive=${unsigned_windows_archive} >> $GITHUB_OUTPUT
 
         echo Files to be signed: ${unsigned_macos_archive} and ${unsigned_windows_archive}
-        ls -lh ${unsigned_windows_archive}
-        du -lh ${unsigned_macos_archive}
+        ls -lh ${unsigned_windows_archive} ${unsigned_macos_archive}
 
     - name: Sign archives
       id: sign-archives
