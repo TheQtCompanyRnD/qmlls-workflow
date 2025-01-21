@@ -257,8 +257,15 @@ jobs:
         echo cache_key=${cache_key} >> $GITHUB_OUTPUT
         echo revision=nightly-${cache_key} >> $GITHUB_OUTPUT
 
-        echo unsigned_macos_archive=$(ls weekly_release/qmlls-macos-*-unsigned.zip/qmlls-macos-*-unsigned.zip | head -n 1) >> $GITHUB_OUTPUT
-        echo unsigned_windows_archive=$(ls weekly_release/qmlls-windows-*-unsigned.zip/qmlls-windows-*-unsigned.zip | head -n 1) >> $GITHUB_OUTPUT
+        unsigned_macos_archive="$(ls weekly_release/qmlls-macos-*-unsigned.zip/qmlls-macos-*-unsigned.zip | head -n 1)"
+        unsigned_windows_archive="$(ls weekly_release/qmlls-windows-*-unsigned.zip/qmlls-windows-*-unsigned.zip | head -n 1)"
+
+        echo unsigned_macos_archive=${unsigned_macos_archive} >> $GITHUB_OUTPUT
+        echo unsigned_windows_archive=${unsigned_windows_archive} >> $GITHUB_OUTPUT
+
+        echo Files to be signed: ${unsigned_macos_archive} and ${unsigned_windows_archive}
+        ls -lh ${unsigned_windows_archive}
+        du -lh ${unsigned_macos_archive}
 
     - name: Sign archives
       id: sign-archives
