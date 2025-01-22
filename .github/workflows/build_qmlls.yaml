@@ -191,7 +191,7 @@ jobs:
         rm -rf qmlls-build; mkdir qmlls-build
         cd qmlls-build
         ../qt-build/qtbase/bin/qt-cmake${{ matrix.script_extension }} -S ../qmlls-workflow-source -B . -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo ${{ matrix.qmlls_configure_flags }}
-        ninja
+        ninja -v
 
     - name: Remove Qt Build to save disk space
       if: steps.cache_artefacts.outputs.cache-hit != 'true'
@@ -266,11 +266,19 @@ jobs:
         echo Files to be signed: ${unsigned_macos_archive} and ${unsigned_windows_archive}
         ls -lh ${unsigned_windows_archive} ${unsigned_macos_archive}
 
-    - name: Sign archives
-      id: sign-archives
+    - name: Sign archives for macos
+      id: sign-archives-macos
       uses: TheQtCompanyRnD/SignArchives@v1
       with:
         macos: ${{ steps.vars.outputs.unsigned_macos_archive }}
+        jenkins-url: '${{ secrets.JENKINS_URL }}'
+        jenkins-user: '${{ secrets.JENKINS_USERNAME }}'
+        jenkins-token: '${{ secrets.JENKINS_TOKEN }}'
+
+    - name: Sign archives for windows
+      id: sign-archives-win
+      uses: TheQtCompanyRnD/SignArchives@v1
+      with:
         win-x64: ${{ steps.vars.outputs.unsigned_windows_archive }}
         jenkins-url: '${{ secrets.JENKINS_URL }}'
         jenkins-user: '${{ secrets.JENKINS_USERNAME }}'
@@ -293,9 +301,9 @@ jobs:
           rm -rf tmp
         }
 
-        repack ${{ steps.sign-archives.outputs.macos }} \
+        repack ${{ steps.sign-archives-macos.outputs.macos }} \
           weekly_release/to_be_uploaded/qmlls-macos-${{ steps.vars.outputs.revision }}.zip
-        repack ${{ steps.sign-archives.outputs.win-x64 }} \
+        repack ${{ steps.sign-archives-win.outputs.win-x64 }} \
           weekly_release/to_be_uploaded/qmlls-windows-${{ steps.vars.outputs.revision }}.zip
 
         mv weekly_release/*/qmlls-ubuntu-${{ steps.vars.outputs.revision }}.zip \
