@@ -158,14 +158,6 @@ jobs:
         path: source
         key: ${{ runner.os }}-qt5repo
 
-    - name: cache qt build ### TODO: to be removed before merging into dev
-      id: cache_qt_build
-      uses: actions/cache/restore@v4
-      if: steps.cache_artefacts.outputs.cache-hit != 'true'
-      with:
-        path: qt-build
-        key: ${{ runner.os }}-qt5build
-
     - name: configure and build Qt
       if: steps.cache_artefacts.outputs.cache-hit != 'true' && steps.cache_qt_build.outputs.cache-hit != 'true'
       run:  |
@@ -175,13 +167,6 @@ jobs:
           -force-bundled-libs -submodules qtdeclarative,qttools -nomake tests -nomake examples \
           -no-prefix -no-sbom -no-gui ${{ matrix.configure_flags }}
         ninja qtdeclarative qtbase Tools QHelpEnginePlugin_init QHelpEnginePlugin
-
-    - name: save qt build cache ### TODO: to be removed before merging into dev
-      if: always() && steps.cache_qt_build.outputs.cache-hit != 'true'
-      uses: actions/cache/save@v4
-      with:
-        path: qt-build
-        key: ${{ runner.os }}-qt5build
 
     - uses: actions/checkout@v4
       if: steps.cache_artefacts.outputs.cache-hit != 'true'
