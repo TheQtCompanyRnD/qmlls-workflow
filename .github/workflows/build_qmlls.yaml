@@ -138,14 +138,14 @@ jobs:
         git reset --hard origin/dev
         git fetch https://codereview.qt-project.org/qt/qtdeclarative refs/changes/41/617341/4 && git checkout FETCH_HEAD # TODO: remove me once patch got merged
         cd ../qttools
-        git fetch https://codereview.qt-project.org/qt/qttools refs/changes/33/619233/3 && git checkout FETCH_HEAD # TODO: remove me once patch got merged
+        git fetch https://codereview.qt-project.org/qt/qttools refs/changes/33/619233/5 && git checkout FETCH_HEAD # TODO: remove me once patch got merged
 
     - name: set qtdeclarative to dev and set dependencies via dependencies.yaml
       if: steps.cache_artefacts.outputs.cache-hit != 'true'
       working-directory: source
       run: | 
         cmake -DSYNC_TO_MODULE="qtdeclarative" -DSYNC_TO_BRANCH="dev" -P cmake/QtSynchronizeRepo.cmake
-        (cd qttools; git checkout dev; git pull; git submodule update; git fetch https://codereview.qt-project.org/qt/qttools refs/changes/33/619233/3 && git checkout FETCH_HEAD) # TODO: remove me once patch got merged
+        (cd qttools; git checkout dev; git pull; git submodule update; git fetch https://codereview.qt-project.org/qt/qttools refs/changes/33/619233/5 && git checkout FETCH_HEAD) # TODO: remove me once patch got merged
         
         (cd qtdeclarative; git fetch https://codereview.qt-project.org/qt/qtdeclarative refs/changes/41/617341/4 && git checkout FETCH_HEAD) # TODO: remove me once patch got merged
         echo "Using following SHAs: "
@@ -173,8 +173,8 @@ jobs:
         cd qt-build
         ../source/configure -force-debug-info -ccache -no-pch -release -static -no-icu \
           -force-bundled-libs -submodules qtdeclarative,qttools -nomake tests -nomake examples \
-          -no-prefix -no-sbom -feature-qthelpheadless ${{ matrix.configure_flags }}
-        ninja qtdeclarative qtbase QHelpEnginePlugin
+          -no-prefix -no-sbom -no-gui ${{ matrix.configure_flags }}
+        ninja qtdeclarative qtbase Tools QHelpEnginePlugin_init QHelpEnginePlugin
 
     - name: save qt build cache ### TODO: to be removed before merging into dev
       if: always() && steps.cache_qt_build.outputs.cache-hit != 'true'
