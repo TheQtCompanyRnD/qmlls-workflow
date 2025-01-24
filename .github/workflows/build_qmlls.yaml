@@ -137,15 +137,14 @@ jobs:
         cd qtdeclarative
         git reset --hard origin/dev
         git fetch https://codereview.qt-project.org/qt/qtdeclarative refs/changes/41/617341/4 && git checkout FETCH_HEAD # TODO: remove me once patch got merged
-        cd ../qttools
-        git fetch https://codereview.qt-project.org/qt/qttools refs/changes/33/619233/7 && git checkout FETCH_HEAD # TODO: remove me once patch got merged
+        (cd ../qttools; git checkout dev; git reset --hard origin/dev; git submodule update)
 
     - name: set qtdeclarative to dev and set dependencies via dependencies.yaml
       if: steps.cache_artefacts.outputs.cache-hit != 'true'
       working-directory: source
       run: | 
         cmake -DSYNC_TO_MODULE="qtdeclarative" -DSYNC_TO_BRANCH="dev" -P cmake/QtSynchronizeRepo.cmake
-        (cd qttools; git checkout dev; git pull; git submodule update; git fetch https://codereview.qt-project.org/qt/qttools refs/changes/33/619233/7 && git checkout FETCH_HEAD) # TODO: remove me once patch got merged
+        (cd ../qttools; git checkout dev; git reset --hard origin/dev; git submodule update)
         
         (cd qtdeclarative; git fetch https://codereview.qt-project.org/qt/qtdeclarative refs/changes/41/617341/4 && git checkout FETCH_HEAD) # TODO: remove me once patch got merged
         echo "Using following SHAs: "
@@ -255,18 +254,10 @@ jobs:
         ls -lh ${unsigned_windows_archive} ${unsigned_macos_archive}
 
     - name: Sign archives for macos
-      id: sign-archives-macos
+      id: sign-archives
       uses: TheQtCompanyRnD/SignArchives@v1
       with:
         macos: ${{ steps.vars.outputs.unsigned_macos_archive }}
-        jenkins-url: '${{ secrets.JENKINS_URL }}'
-        jenkins-user: '${{ secrets.JENKINS_USERNAME }}'
-        jenkins-token: '${{ secrets.JENKINS_TOKEN }}'
-
-    - name: Sign archives for windows
-      id: sign-archives-win
-      uses: TheQtCompanyRnD/SignArchives@v1
-      with:
         win-x64: ${{ steps.vars.outputs.unsigned_windows_archive }}
         jenkins-url: '${{ secrets.JENKINS_URL }}'
         jenkins-user: '${{ secrets.JENKINS_USERNAME }}'
@@ -289,17 +280,25 @@ jobs:
           rm -rf tmp
         }
 
-        repack ${{ steps.sign-archives-macos.outputs.macos }} \
+        repack ${{ steps.sign-archives.outputs.macos }} \
           weekly_release/to_be_uploaded/qmlls-macos-${{ steps.vars.outputs.revision }}.zip
-        repack ${{ steps.sign-archives-win.outputs.win-x64 }} \
+        repack ${{ steps.sign-archives.outputs.win-x64 }} \
           weekly_release/to_be_uploaded/qmlls-windows-${{ steps.vars.outputs.revision }}.zip
 
         mv weekly_release/*/qmlls-ubuntu-${{ steps.vars.outputs.revision }}.zip \
           weekly_release/to_be_uploaded/qmlls-ubuntu-${{ steps.vars.outputs.revision }}.zip
         mv weekly_release/*/*-debugsymbols.zip weekly_release/to_be_uploaded/
 
+    - name: Upload signed artefact
+      uses: actions/upload-artifact@v4
+      with:
+        path: |
+          weekly_release/to_be_uploaded/qmlls-macos-${{ steps.vars.outputs.revision }}.zip
+          weekly_release/to_be_uploaded/qmlls-windows-${{ steps.vars.outputs.revision }}.zip
+        name: signed-artefacts.zip
+
     - name: Create nightly release
-      if: ${{ ! contains(github.ref, 'tags/qmlls-') }}
+      if: ${{ github.ref == 'refs/heads/main' }}
       uses: softprops/action-gh-release@v2
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
