@@ -130,16 +130,15 @@ jobs:
       run: |
         git fetch
         git submodule foreach --recursive git gc --auto # try to save some disk space
-        cd qtdeclarative
-        git reset --hard origin/dev
-        (cd ../qttools; git checkout dev; git reset --hard origin/dev; git submodule update)
+        (cd qtdeclarative; git reset --hard origin/dev;)
+        (cd qttools; git checkout dev; git reset --hard origin/dev; git submodule update)
 
     - name: set qtdeclarative to dev and set dependencies via dependencies.yaml
       if: steps.cache_artefacts.outputs.cache-hit != 'true'
       working-directory: source
       run: | 
         cmake -DSYNC_TO_MODULE="qtdeclarative" -DSYNC_TO_BRANCH="dev" -P cmake/QtSynchronizeRepo.cmake
-        (cd ../qttools; git checkout dev; git reset --hard origin/dev; git submodule update)
+        (cd qttools; git checkout dev; git reset --hard origin/dev; git submodule update)
         
         echo "Using following SHAs: "
         for i in . qtdeclarative qtbase qtimageformats qtlanguageserver qtshadertools qtsvg qttools; do (cd $i; echo "$i: $(git show HEAD -s --format=oneline)";); done;
