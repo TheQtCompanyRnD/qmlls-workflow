@@ -73,10 +73,6 @@ jobs:
       run: |
         sudo apt-get update
         # try to make more disk space by removing unused things
-        # apt list --installed || true # if more stuff needs to be removed
-        echo List of installed packages:
-        dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -rn
-        pip --list || true # if more stuff needs to be removed
         sudo apt-get purge firefox chromium-browser microsoft-edge-stable google-chrome-stable apache2 mysql-server mysql-common "php*" "ruby*"  || true
         sudo apt-get autoremove || true
         sudo rm -rf /usr/local/lib/android/sdk || true
@@ -176,7 +172,7 @@ jobs:
         rm -rf qmlls-build; mkdir qmlls-build
         cd qmlls-build
         ../qt-build/qtbase/bin/qt-cmake${{ matrix.script_extension }} -S ../qmlls-workflow-source -B . -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo ${{ matrix.qmlls_configure_flags }}
-        ninja -v
+        ninja
 
     - name: Remove Qt Build to save disk space
       if: steps.cache_artefacts.outputs.cache-hit != 'true'
@@ -251,7 +247,7 @@ jobs:
         echo Files to be signed: ${unsigned_macos_archive} and ${unsigned_windows_archive}
         ls -lh ${unsigned_windows_archive} ${unsigned_macos_archive}
 
-    - name: Sign archives for macos
+    - name: Sign archives
       id: sign-archives
       uses: TheQtCompanyRnD/SignArchives@v1
       with:
