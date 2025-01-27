@@ -136,7 +136,6 @@ jobs:
         git submodule foreach --recursive git gc --auto # try to save some disk space
         cd qtdeclarative
         git reset --hard origin/dev
-        git fetch https://codereview.qt-project.org/qt/qtdeclarative refs/changes/41/617341/4 && git checkout FETCH_HEAD # TODO: remove me once patch got merged
         (cd ../qttools; git checkout dev; git reset --hard origin/dev; git submodule update)
 
     - name: set qtdeclarative to dev and set dependencies via dependencies.yaml
@@ -146,7 +145,6 @@ jobs:
         cmake -DSYNC_TO_MODULE="qtdeclarative" -DSYNC_TO_BRANCH="dev" -P cmake/QtSynchronizeRepo.cmake
         (cd ../qttools; git checkout dev; git reset --hard origin/dev; git submodule update)
         
-        (cd qtdeclarative; git fetch https://codereview.qt-project.org/qt/qtdeclarative refs/changes/41/617341/4 && git checkout FETCH_HEAD) # TODO: remove me once patch got merged
         echo "Using following SHAs: "
         for i in . qtdeclarative qtbase qtimageformats qtlanguageserver qtshadertools qtsvg qttools; do (cd $i; echo "$i: $(git show HEAD -s --format=oneline)";); done;
 
