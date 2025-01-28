@@ -47,29 +47,29 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-    - name: get artefacts cache key
-      id: artefacts_cache_key
+    - name: get artifacts cache key
+      id: artifacts_cache_key
       # we build qmlls once per week, so use week number + year as cache key
       run: |
         key=$(date "+%Y.%W")
         echo "key=${key}" >> $GITHUB_OUTPUT
-        echo artefact_basename=qmlls-${{ matrix.name }}-nightly-${key} >> $GITHUB_OUTPUT
+        echo artifact_basename=qmlls-${{ matrix.name }}-nightly-${key} >> $GITHUB_OUTPUT
 
-    - name: cache artefacts
-      id: cache_artefacts
+    - name: cache artifacts
+      id: cache_artifacts
       uses: actions/cache@v4
       with:
-        path: artefacts
-        key: ${{ runner.os }}-${{ steps.artefacts_cache_key.outputs.key }}-artefacts
+        path: artifacts
+        key: ${{ runner.os }}-${{ steps.artifacts_cache_key.outputs.key }}-artifacts
 
     - uses: lukka/get-cmake@latest
-      if: steps.cache_artefacts.outputs.cache-hit != 'true'
+      if: steps.cache_artifacts.outputs.cache-hit != 'true'
       with:
         cmakeVersion: "~3.30.0"
         ninjaVersion: latest
 
     - name: prepare Linux
-      if: runner.os == 'Linux' && steps.cache_artefacts.outputs.cache-hit != 'true'
+      if: runner.os == 'Linux' && steps.cache_artifacts.outputs.cache-hit != 'true'
       run: |
         sudo apt-get update
         # try to make more disk space by removing unused things
@@ -79,17 +79,17 @@ jobs:
         sudo apt-get clean || true
 
     - name: prepare macOS
-      if: runner.os == 'macOS' && steps.cache_artefacts.outputs.cache-hit != 'true'
+      if: runner.os == 'macOS' && steps.cache_artifacts.outputs.cache-hit != 'true'
       run: echo noop
     - name: prepare Windows
-      if: runner.os == 'Windows' && steps.cache_artefacts.outputs.cache-hit != 'true'
+      if: runner.os == 'Windows' && steps.cache_artifacts.outputs.cache-hit != 'true'
       shell: cmd
       run: |
         call "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
         set >> "%GITHUB_ENV%"
 
     - name: restore ccache
-      if: steps.cache_artefacts.outputs.cache-hit != 'true'
+      if: steps.cache_artifacts.outputs.cache-hit != 'true'
       uses: actions/cache@v4
       with:
         path: ${{ runner.temp }}/ccache
@@ -97,12 +97,12 @@ jobs:
 
     - name: install build dependencies
       run:  ${{ matrix.install_cmd }}  ${{ matrix.deps }}  ${{ matrix.install_cmd_postfix }}
-      if: matrix.deps != '' && steps.cache_artefacts.outputs.cache-hit != 'true'
+      if: matrix.deps != '' && steps.cache_artifacts.outputs.cache-hit != 'true'
     - name: install compiler tools
-      if: steps.cache_artefacts.outputs.cache-hit != 'true'
+      if: steps.cache_artifacts.outputs.cache-hit != 'true'
       run:  ${{ matrix.install_cmd }}  ${{ matrix.tools }}  ${{ matrix.install_cmd_postfix }}
     - name: configure ccache
-      if: steps.cache_artefacts.outputs.cache-hit != 'true'
+      if: steps.cache_artifacts.outputs.cache-hit != 'true'
       run: |
         ccache --set-config sloppiness=file_macro,time_macros
         ccache --set-config cache_dir='${{ runner.temp }}'/ccache
@@ -112,20 +112,20 @@ jobs:
     - name: cache repository
       id: cache-repo
       uses: actions/cache/restore@v4
-      if: steps.cache_artefacts.outputs.cache-hit != 'true'
+      if: steps.cache_artifacts.outputs.cache-hit != 'true'
       with:
         path: source
         key: ${{ runner.os }}-qt5repo
 
     - name: cloning qt5 and initialize subrepositories
-      if: steps.cache-repo.outputs.cache-hit != 'true' && steps.cache_artefacts.outputs.cache-hit != 'true'
+      if: steps.cache-repo.outputs.cache-hit != 'true' && steps.cache_artifacts.outputs.cache-hit != 'true'
       run:  |
         git clone https://code.qt.io/qt/qt5.git source
         cd source
         ./init-repository --module-subset=qtdeclarative,qttools
 
     - name: update cached repository
-      if: steps.cache-repo.outputs.cache-hit == 'true' && steps.cache_artefacts.outputs.cache-hit != 'true'
+      if: steps.cache-repo.outputs.cache-hit == 'true' && steps.cache_artifacts.outputs.cache-hit != 'true'
       working-directory: source
       run: |
         git fetch
@@ -134,7 +134,7 @@ jobs:
         (cd qttools; git checkout dev; git reset --hard origin/dev; git submodule update)
 
     - name: set qtdeclarative to dev and set dependencies via dependencies.yaml
-      if: steps.cache_artefacts.outputs.cache-hit != 'true'
+      if: steps.cache_artifacts.outputs.cache-hit != 'true'
       working-directory: source
       run: | 
         cmake -DSYNC_TO_MODULE="qtdeclarative" -DSYNC_TO_BRANCH="dev" -P cmake/QtSynchronizeRepo.cmake
@@ -144,14 +144,14 @@ jobs:
         for i in . qtdeclarative qtbase qtimageformats qtlanguageserver qtshadertools qtsvg qttools; do (cd $i; echo "$i: $(git show HEAD -s --format=oneline)";); done;
 
     - name: save cached repository
-      if: always() && steps.cache_artefacts.outputs.cache-hit != 'true'
+      if: always() && steps.cache_artifacts.outputs.cache-hit != 'true'
       uses: actions/cache/save@v4
       with:
         path: source
         key: ${{ runner.os }}-qt5repo
 
     - name: configure and build Qt
-      if: steps.cache_artefacts.outputs.cache-hit != 'true' && steps.cache_qt_build.outputs.cache-hit != 'true'
+      if: steps.cache_artifacts.outputs.cache-hit != 'true' && steps.cache_qt_build.outputs.cache-hit != 'true'
       run:  |
         rm -rf qt-build; mkdir qt-build
         cd qt-build
@@ -161,12 +161,12 @@ jobs:
         ninja qtdeclarative qtbase Tools QHelpEnginePlugin_init QHelpEnginePlugin
 
     - uses: actions/checkout@v4
-      if: steps.cache_artefacts.outputs.cache-hit != 'true'
+      if: steps.cache_artifacts.outputs.cache-hit != 'true'
       with:
         path: qmlls-workflow-source
 
     - name: configure and build Qmlls
-      if: steps.cache_artefacts.outputs.cache-hit != 'true'
+      if: steps.cache_artifacts.outputs.cache-hit != 'true'
       run:  |
         rm -rf qmlls-build; mkdir qmlls-build
         cd qmlls-build
@@ -174,46 +174,46 @@ jobs:
         ninja
 
     - name: Remove Qt Build to save disk space
-      if: steps.cache_artefacts.outputs.cache-hit != 'true'
+      if: steps.cache_artifacts.outputs.cache-hit != 'true'
       run: rm -rf qt-build
 
     - name: Create info file
-      if: steps.cache_artefacts.outputs.cache-hit != 'true'
+      if: steps.cache_artifacts.outputs.cache-hit != 'true'
       run: |
         echo -e "commit: $(cd source/qtdeclarative && git rev-parse --short HEAD)\nbuild: $(date +"%Y-%m-%dT%H:%M:%SZ")" \
         > info.txt
 
     - name: Stripping qmlls binary on linux
-      if: matrix.name == 'ubuntu' && steps.cache_artefacts.outputs.cache-hit != 'true'
+      if: matrix.name == 'ubuntu' && steps.cache_artifacts.outputs.cache-hit != 'true'
       run: |
         objcopy --only-keep-debug ./qmlls-build/qmlls ./qmlls-build/qmlls.dbg
         strip ./qmlls-build/qmlls
         objcopy --add-gnu-debuglink=./qmlls-build/qmlls.dbg ./qmlls-build/qmlls
 
     - name: Stripping qmlls binary on mac
-      if: matrix.name == 'macos' && steps.cache_artefacts.outputs.cache-hit != 'true'
+      if: matrix.name == 'macos' && steps.cache_artifacts.outputs.cache-hit != 'true'
       run: |
         dsymutil ./qmlls-build/qmlls -o ./qmlls-build/qmlls.dSYM
         strip ./qmlls-build/qmlls
 
     - name: Zipping debug symbols and executable
-      if: steps.cache_artefacts.outputs.cache-hit != 'true'
+      if: steps.cache_artifacts.outputs.cache-hit != 'true'
       run: |
-        mkdir artefacts
-        7z a artefacts/${{ steps.artefacts_cache_key.outputs.artefact_basename }}-debugsymbols.zip ./qmlls-build/qmlls${{ matrix.debugging_symbols_extension }} info.txt
-        7z a artefacts/${{ steps.artefacts_cache_key.outputs.artefact_basename }}${{ matrix.unsigned_suffix }}.zip ./qmlls-build/qmlls${{ matrix.executable_extension }} info.txt
+        mkdir artifacts
+        7z a artifacts/${{ steps.artifacts_cache_key.outputs.artifact_basename }}-debugsymbols.zip ./qmlls-build/qmlls${{ matrix.debugging_symbols_extension }} info.txt
+        7z a artifacts/${{ steps.artifacts_cache_key.outputs.artifact_basename }}${{ matrix.unsigned_suffix }}.zip ./qmlls-build/qmlls${{ matrix.executable_extension }} info.txt
 
-    - name: Upload artefact
+    - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        path: artefacts/${{ steps.artefacts_cache_key.outputs.artefact_basename }}${{ matrix.unsigned_suffix }}.zip
-        name: ${{ steps.artefacts_cache_key.outputs.artefact_basename }}${{ matrix.unsigned_suffix }}.zip
+        path: artifacts/${{ steps.artifacts_cache_key.outputs.artifact_basename }}${{ matrix.unsigned_suffix }}.zip
+        name: ${{ steps.artifacts_cache_key.outputs.artifact_basename }}${{ matrix.unsigned_suffix }}.zip
 
-    - name: Upload artefact with debug symbols
+    - name: Upload artifact with debug symbols
       uses: actions/upload-artifact@v4
       with:
-        path: artefacts/${{ steps.artefacts_cache_key.outputs.artefact_basename }}-debugsymbols.zip
-        name: ${{ steps.artefacts_cache_key.outputs.artefact_basename }}-debugsymbols.zip
+        path: artifacts/${{ steps.artifacts_cache_key.outputs.artifact_basename }}-debugsymbols.zip
+        name: ${{ steps.artifacts_cache_key.outputs.artifact_basename }}-debugsymbols.zip
 
   release:
     permissions:
@@ -222,7 +222,7 @@ jobs:
     environment: Signing credentials
     needs: build
     steps:
-    - name: Remove old artefacts
+    - name: Remove old artifacts
       run: rm -rf weekly_release; mkdir weekly_release
     - name: Download artifacts
       id: downloaded_artifacts
@@ -282,13 +282,13 @@ jobs:
           weekly_release/to_be_uploaded/qmlls-ubuntu-${{ steps.vars.outputs.revision }}.zip
         mv weekly_release/*/*-debugsymbols.zip weekly_release/to_be_uploaded/
 
-    - name: Upload signed artefact
+    - name: Upload signed artifact
       uses: actions/upload-artifact@v4
       with:
         path: |
           weekly_release/to_be_uploaded/qmlls-macos-${{ steps.vars.outputs.revision }}.zip
           weekly_release/to_be_uploaded/qmlls-windows-${{ steps.vars.outputs.revision }}.zip
-        name: signed-artefacts.zip
+        name: signed-artifacts.zip
 
     - name: Create nightly release
       if: ${{ github.ref == 'refs/heads/main' }}
