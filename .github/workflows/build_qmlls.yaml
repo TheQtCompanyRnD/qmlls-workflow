@@ -19,7 +19,7 @@ jobs:
       matrix:
         include:
           - name: ubuntu
-            os:   ubuntu-latest
+            os:   ubuntu-22.04
             deps: libgl-dev libglu-dev 'libxcb*-dev' libx11-xcb-dev libxkbcommon-x11-dev libb2-dev libdouble-conversion-dev
             tools: ccache
             install_cmd: sudo apt-get -y install
