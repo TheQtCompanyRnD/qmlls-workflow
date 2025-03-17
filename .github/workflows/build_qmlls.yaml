@@ -296,7 +296,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: qmlls-nightly-${{ steps.vars.outputs.cache_key }}
+        tag_name: nightly-${{ steps.vars.outputs.cache_key }}
         draft: false
         prerelease: true
         files: weekly_release/to_be_uploaded/*
