@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
 
 #include <private/qmllsmain_p.h>
+#include <QtCore/qcoreapplication.h>
 
 // To debug:
 //
@@ -29,5 +30,7 @@
 
 int main(int argv, char *argc[])
 {
+    QCoreApplication::setApplicationVersion("0.3"_L1);
+    QCoreApplication::setApplicationName("qmlls (standalone)"_L1);
     return QmlLsp::qmllsMain(argv, argc);
 }
