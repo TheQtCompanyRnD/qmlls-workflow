@@ -27,6 +27,8 @@
 //
 // * statup can be slowed down to have the time to attach via the
 //   -w <nSeconds> flag.
+//
+using namespace Qt::StringLiterals;
 
 int main(int argv, char *argc[])
 {
