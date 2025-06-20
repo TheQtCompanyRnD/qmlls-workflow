@@ -228,6 +228,7 @@ jobs:
     permissions:
       contents: write
     runs-on: signing-runner
+    if: event.inputs.ref_to_build != ""
     environment: Signing credentials
     needs: build
     steps:
