@@ -60,6 +60,7 @@ jobs:
         echo artifact_basename=qmlls-${{ matrix.name }}-nightly-${key} >> $GITHUB_OUTPUT
 
     - name: cache artifacts
+      if: github.event.inputs.ref_to_build == ""
       id: cache_artifacts
       uses: actions/cache@v4
       with:
@@ -228,7 +229,7 @@ jobs:
     permissions:
       contents: write
     runs-on: signing-runner
-    if: event.inputs.ref_to_build != ""
+    if: event.inputs.ref_to_build == ""
     environment: Signing credentials
     needs: build
     steps:
