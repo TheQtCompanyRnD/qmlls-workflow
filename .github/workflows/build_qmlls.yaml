@@ -280,6 +280,8 @@ jobs:
 
         mv weekly_release/*/qmlls-ubuntu-${{ steps.vars.outputs.revision }}.zip \
           weekly_release/to_be_uploaded/qmlls-ubuntu-${{ steps.vars.outputs.revision }}.zip
+        mv weekly_release/*/qmlls-windows-${{ steps.vars.outputs.revision }}.zip \
+          weekly_release/to_be_uploaded/qmlls-windows-${{ steps.vars.outputs.revision }}.zip
         mv weekly_release/*/*-debugsymbols.zip weekly_release/to_be_uploaded/
 
     - name: Upload signed artifact
