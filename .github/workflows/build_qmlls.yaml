@@ -44,6 +44,23 @@ jobs:
             executable_extension: .exe
             script_extension: .bat
             unsigned_suffix: -unsigned
+          - name: ubuntu-arm
+            os: ubuntu-22.04-arm
+            deps: libgl-dev libglu-dev 'libxcb*-dev' libx11-xcb-dev libxkbcommon-x11-dev libb2-dev libdouble-conversion-dev
+            tools: ccache
+            install_cmd: sudo apt-get -y install
+            configure_flags: -xcb
+            debugging_symbols_extension: .dbg
+          - name: windows-arm
+            os:   windows-11-arm
+            install_cmd: choco install
+            install_cmd_postfix: --yes --no-progress
+            tools: ccache
+            configure_flags: -no-feature-sql-psql -no-feature-sql-mysql -no-feature-sql-odbc
+            debugging_symbols_extension: .pdb
+            executable_extension: .exe
+            script_extension: .bat
+            unsigned_suffix: -unsigned
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -60,7 +77,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: artifacts
-        key: ${{ runner.os }}-${{ steps.artifacts_cache_key.outputs.key }}-artifacts
+        key: ${{ matrix.name }}-${{ steps.artifacts_cache_key.outputs.key }}-artifacts
 
     - uses: lukka/get-cmake@latest
       if: steps.cache_artifacts.outputs.cache-hit != 'true'
@@ -115,7 +132,7 @@ jobs:
       if: steps.cache_artifacts.outputs.cache-hit != 'true'
       with:
         path: source
-        key: ${{ runner.os }}-qt5repo
+        key: ${{ matrix.name }}-qt5repo
 
     - name: cloning qt5 and initialize subrepositories
       if: steps.cache-repo.outputs.cache-hit != 'true' && steps.cache_artifacts.outputs.cache-hit != 'true'
@@ -148,7 +165,7 @@ jobs:
       uses: actions/cache/save@v4
       with:
         path: source
-        key: ${{ runner.os }}-qt5repo
+        key: ${{ matrix.name }}-qt5repo
 
     - name: configure and build Qt
       if: steps.cache_artifacts.outputs.cache-hit != 'true' && steps.cache_qt_build.outputs.cache-hit != 'true'
@@ -184,7 +201,7 @@ jobs:
         > info.txt
 
     - name: Stripping qmlls binary on linux
-      if: matrix.name == 'ubuntu' && steps.cache_artifacts.outputs.cache-hit != 'true'
+      if: (matrix.name == 'ubuntu' || matrix.name == 'ubuntu-arm') && steps.cache_artifacts.outputs.cache-hit != 'true'
       run: |
         objcopy --only-keep-debug ./qmlls-build/qmlls ./qmlls-build/qmlls.dbg
         strip ./qmlls-build/qmlls
@@ -238,13 +255,15 @@ jobs:
         echo revision=nightly-${cache_key} >> $GITHUB_OUTPUT
 
         unsigned_macos_archive="$(ls weekly_release/qmlls-macos-*-unsigned.zip/qmlls-macos-*-unsigned.zip | head -n 1)"
-        unsigned_windows_archive="$(ls weekly_release/qmlls-windows-*-unsigned.zip/qmlls-windows-*-unsigned.zip | head -n 1)"
+        unsigned_windows_archive="$(ls weekly_release/qmlls-windows-*-unsigned.zip/qmlls-windows-nightly*-unsigned.zip | head -n 1)"
+        unsigned_windows_arm_archive="$(ls weekly_release/qmlls-windows-*-unsigned.zip/qmlls-windows-arm-*-unsigned.zip | head -n 1)"
 
         echo unsigned_macos_archive=${unsigned_macos_archive} >> $GITHUB_OUTPUT
         echo unsigned_windows_archive=${unsigned_windows_archive} >> $GITHUB_OUTPUT
+        echo unsigned_windows_arm_archive=${unsigned_windows_arm_archive} >> $GITHUB_OUTPUT
 
-        echo Files to be signed: ${unsigned_macos_archive} and ${unsigned_windows_archive}
-        ls -lh ${unsigned_windows_archive} ${unsigned_macos_archive}
+        echo Files to be signed: ${unsigned_macos_archive} and ${unsigned_windows_archive} and ${unsigned_windows_arm_archive}
+        ls -lh ${unsigned_windows_archive} ${unsigned_macos_archive} ${unsigned_windows_arm_archive}
 
     - name: Sign archives
       id: sign-archives
@@ -252,6 +271,7 @@ jobs:
       with:
         macos: ${{ steps.vars.outputs.unsigned_macos_archive }}
         win-x64: ${{ steps.vars.outputs.unsigned_windows_archive }}
+        win-arm64: ${{ steps.vars.outputs.unsigned_windows_arm_archive }}
         jenkins-url: '${{ secrets.JENKINS_URL }}'
         jenkins-user: '${{ secrets.JENKINS_USERNAME }}'
         jenkins-token: '${{ secrets.JENKINS_TOKEN }}'
@@ -261,7 +281,6 @@ jobs:
         ls -R # debug output
 
         mkdir weekly_release/to_be_uploaded
-        mkdir weekly_release/windows
 
         # the signing job returns .7z files, but we want .zip for our clients.
         function repack {
@@ -276,10 +295,14 @@ jobs:
         repack ${{ steps.sign-archives.outputs.macos }} \
           weekly_release/to_be_uploaded/qmlls-macos-${{ steps.vars.outputs.revision }}.zip
         repack ${{ steps.sign-archives.outputs.win-x64 }} \
-          weekly_release/to_be_uploaded/qmlls-windows-${{ steps.vars.outputs.revision }}.zip
+          weekly_release/to_be_uploaded/qmlls-windows-x64-${{ steps.vars.outputs.revision }}.zip
+        repack ${{ steps.sign-archives.outputs.win-arm64 }} \
+          weekly_release/to_be_uploaded/qmlls-windows-arm64-${{ steps.vars.outputs.revision }}.zip
 
         mv weekly_release/*/qmlls-ubuntu-${{ steps.vars.outputs.revision }}.zip \
-          weekly_release/to_be_uploaded/qmlls-ubuntu-${{ steps.vars.outputs.revision }}.zip
+          weekly_release/to_be_uploaded/qmlls-ubuntu-x64-${{ steps.vars.outputs.revision }}.zip
+        mv weekly_release/*/qmlls-ubuntu-arm-${{ steps.vars.outputs.revision }}.zip \
+          weekly_release/to_be_uploaded/qmlls-ubuntu-arm64-${{ steps.vars.outputs.revision }}.zip
         mv weekly_release/*/*-debugsymbols.zip weekly_release/to_be_uploaded/
 
     - name: Upload signed artifact
@@ -287,7 +310,8 @@ jobs:
       with:
         path: |
           weekly_release/to_be_uploaded/qmlls-macos-${{ steps.vars.outputs.revision }}.zip
-          weekly_release/to_be_uploaded/qmlls-windows-${{ steps.vars.outputs.revision }}.zip
+          weekly_release/to_be_uploaded/qmlls-windows-x64-${{ steps.vars.outputs.revision }}.zip
+          weekly_release/to_be_uploaded/qmlls-windows-arm64-${{ steps.vars.outputs.revision }}.zip
         name: signed-artifacts.zip
 
     - name: Create nightly release
