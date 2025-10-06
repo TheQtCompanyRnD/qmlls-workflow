@@ -18,32 +18,32 @@ jobs:
       fail-fast: false
       matrix:
         include:
-###          - name: ubuntu
-###            os:   ubuntu-22.04
-###            deps: libgl-dev libglu-dev 'libxcb*-dev' libx11-xcb-dev libxkbcommon-x11-dev libb2-dev libdouble-conversion-dev
-###            tools: ccache
-###            install_cmd: sudo apt-get -y install
-###            configure_flags: -xcb
-###            debugging_symbols_extension: .dbg
-###          - name: macos
-###            os:   macos-latest
-###            deps:
-###            tools: ccache
-###            install_cmd: HOMEBREW_NO_INSTALL_CLEANUP=1 brew install
-###            configure_flags: "-- '-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64'"
-###            qmlls_configure_flags: "'-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64'"
-###            debugging_symbols_extension: .dSYM
-###            unsigned_suffix: -unsigned
-###          - name: windows
-###            os:   windows-latest
-###            install_cmd: choco install
-###            install_cmd_postfix: --yes --no-progress
-###            tools: ccache
-###            configure_flags: -no-feature-sql-psql -no-feature-sql-mysql -no-feature-sql-odbc
-###            debugging_symbols_extension: .pdb
-###            executable_extension: .exe
-###            script_extension: .bat
-###            unsigned_suffix: -unsigned
+          - name: ubuntu
+            os:   ubuntu-22.04
+            deps: libgl-dev libglu-dev 'libxcb*-dev' libx11-xcb-dev libxkbcommon-x11-dev libb2-dev libdouble-conversion-dev
+            tools: ccache
+            install_cmd: sudo apt-get -y install
+            configure_flags: -xcb
+            debugging_symbols_extension: .dbg
+          - name: macos
+            os:   macos-latest
+            deps:
+            tools: ccache
+            install_cmd: HOMEBREW_NO_INSTALL_CLEANUP=1 brew install
+            configure_flags: "-- '-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64'"
+            qmlls_configure_flags: "'-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64'"
+            debugging_symbols_extension: .dSYM
+            unsigned_suffix: -unsigned
+          - name: windows
+            os:   windows-latest
+            install_cmd: choco install
+            install_cmd_postfix: --yes --no-progress
+            tools: ccache
+            configure_flags: -no-feature-sql-psql -no-feature-sql-mysql -no-feature-sql-odbc
+            debugging_symbols_extension: .pdb
+            executable_extension: .exe
+            script_extension: .bat
+           unsigned_suffix: -unsigned
           - name: ubuntu-arm
             os: ubuntu-22.04-arm
             deps: libgl-dev libglu-dev 'libxcb*-dev' libx11-xcb-dev libxkbcommon-x11-dev libb2-dev libdouble-conversion-dev
@@ -254,12 +254,12 @@ jobs:
         echo cache_key=${cache_key} >> $GITHUB_OUTPUT
         echo revision=nightly-${cache_key} >> $GITHUB_OUTPUT
 
-        # unsigned_macos_archive="$(ls weekly_release/qmlls-macos-*-unsigned.zip/qmlls-macos-*-unsigned.zip | head -n 1)"
-        # unsigned_windows_archive="$(ls weekly_release/qmlls-windows-*-unsigned.zip/qmlls-windows-nightly*-unsigned.zip | head -n 1)"
+        unsigned_macos_archive="$(ls weekly_release/qmlls-macos-*-unsigned.zip/qmlls-macos-*-unsigned.zip | head -n 1)"
+        unsigned_windows_archive="$(ls weekly_release/qmlls-windows-*-unsigned.zip/qmlls-windows-nightly*-unsigned.zip | head -n 1)"
         unsigned_windows_arm_archive="$(ls weekly_release/qmlls-windows-*-unsigned.zip/qmlls-windows-arm-*-unsigned.zip | head -n 1)"
 
-        # echo unsigned_macos_archive=${unsigned_macos_archive} >> $GITHUB_OUTPUT
-        # echo unsigned_windows_archive=${unsigned_windows_archive} >> $GITHUB_OUTPUT
+        echo unsigned_macos_archive=${unsigned_macos_archive} >> $GITHUB_OUTPUT
+        echo unsigned_windows_archive=${unsigned_windows_archive} >> $GITHUB_OUTPUT
         echo unsigned_windows_arm_archive=${unsigned_windows_arm_archive} >> $GITHUB_OUTPUT
 
         echo Files to be signed: ${unsigned_macos_archive} and ${unsigned_windows_archive} and ${unsigned_windows_arm_archive}
@@ -292,15 +292,15 @@ jobs:
           rm -rf tmp
         }
 
-        # repack ${{ steps.sign-archives.outputs.macos }} \
-        #   weekly_release/to_be_uploaded/qmlls-macos-${{ steps.vars.outputs.revision }}.zip
-        # repack ${{ steps.sign-archives.outputs.win-x64 }} \
-        #   weekly_release/to_be_uploaded/qmlls-windows-x64-${{ steps.vars.outputs.revision }}.zip
+        repack ${{ steps.sign-archives.outputs.macos }} \
+          weekly_release/to_be_uploaded/qmlls-macos-${{ steps.vars.outputs.revision }}.zip
+        repack ${{ steps.sign-archives.outputs.win-x64 }} \
+          weekly_release/to_be_uploaded/qmlls-windows-x64-${{ steps.vars.outputs.revision }}.zip
         repack ${{ steps.sign-archives.outputs.win-arm64 }} \
           weekly_release/to_be_uploaded/qmlls-windows-arm64-${{ steps.vars.outputs.revision }}.zip
 
-        # mv weekly_release/*/qmlls-ubuntu-${{ steps.vars.outputs.revision }}.zip \
-        #   weekly_release/to_be_uploaded/qmlls-ubuntu-x64-${{ steps.vars.outputs.revision }}.zip
+        mv weekly_release/*/qmlls-ubuntu-${{ steps.vars.outputs.revision }}.zip \
+          weekly_release/to_be_uploaded/qmlls-ubuntu-x64-${{ steps.vars.outputs.revision }}.zip
         mv weekly_release/*/qmlls-ubuntu-arm-${{ steps.vars.outputs.revision }}.zip \
           weekly_release/to_be_uploaded/qmlls-ubuntu-arm64-${{ steps.vars.outputs.revision }}.zip
         mv weekly_release/*/*-debugsymbols.zip weekly_release/to_be_uploaded/
@@ -308,9 +308,9 @@ jobs:
     - name: Upload signed artifact
       uses: actions/upload-artifact@v4
       with:
-          # weekly_release/to_be_uploaded/qmlls-macos-${{ steps.vars.outputs.revision }}.zip
-          # weekly_release/to_be_uploaded/qmlls-windows-x64-${{ steps.vars.outputs.revision }}.zip
         path: |
+          weekly_release/to_be_uploaded/qmlls-macos-${{ steps.vars.outputs.revision }}.zip
+          weekly_release/to_be_uploaded/qmlls-windows-x64-${{ steps.vars.outputs.revision }}.zip
           weekly_release/to_be_uploaded/qmlls-windows-arm64-${{ steps.vars.outputs.revision }}.zip
         name: signed-artifacts.zip
 
