@@ -77,7 +77,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: artifacts
-        key: ${{ runner.name }}-${{ steps.artifacts_cache_key.outputs.key }}-artifacts
+        key: ${{ matrix.name }}-${{ steps.artifacts_cache_key.outputs.key }}-artifacts
 
     - uses: lukka/get-cmake@latest
       if: steps.cache_artifacts.outputs.cache-hit != 'true'
@@ -132,7 +132,7 @@ jobs:
       if: steps.cache_artifacts.outputs.cache-hit != 'true'
       with:
         path: source
-        key: ${{ runner.name }}-qt5repo
+        key: ${{ matrix.name }}-qt5repo
 
     - name: cloning qt5 and initialize subrepositories
       if: steps.cache-repo.outputs.cache-hit != 'true' && steps.cache_artifacts.outputs.cache-hit != 'true'
@@ -165,7 +165,7 @@ jobs:
       uses: actions/cache/save@v4
       with:
         path: source
-        key: ${{ runner.name }}-qt5repo
+        key: ${{ matrix.name }}-qt5repo
 
     - name: configure and build Qt
       if: steps.cache_artifacts.outputs.cache-hit != 'true' && steps.cache_qt_build.outputs.cache-hit != 'true'
