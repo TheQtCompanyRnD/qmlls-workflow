@@ -26,6 +26,7 @@ jobs:
     steps:
     - name: Check libpq version
       run: |
+        apt-cache policy libpq5
         apt list --installed
         sudo apt-get -y install libpq5=14
         echo LD_LIBRARY_PATH=\"$LD_LIBRARY_PATH\"
