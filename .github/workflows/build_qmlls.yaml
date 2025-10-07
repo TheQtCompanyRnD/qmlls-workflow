@@ -1,12 +1,7 @@
 name: Build qmlls
 
 on:
-  # release nightly on weekly schedule
-  schedule:
-    - cron: '0 2 * * 1'
-  # also release nightly on manual trigger
   workflow_dispatch:
-  push:
 
 defaults:
   run:

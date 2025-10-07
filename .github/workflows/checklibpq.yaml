@@ -26,5 +26,6 @@ jobs:
     steps:
     - name: Check libpq version
       run: |
+        sudo apt-get -y install libpq5=5.14
         echo LD_LIBRARY_PATH=\"$LD_LIBRARY_PATH\"
-        find /usr/lib -name 'libpq*'
+        ls -l $(find /usr/lib -name 'libpq.*')
