@@ -6,6 +6,10 @@ on:
     - cron: '0 2 * * 1'
   # also release nightly on manual trigger
   workflow_dispatch:
+    inputs:
+      ref_to_build:
+        description: qtdeclarative ref to build in the form of refs/changes/15/654815/1
+        required: true
   push:
 
 defaults:
@@ -73,6 +77,7 @@ jobs:
         echo artifact_basename=qmlls-${{ matrix.name }}-nightly-${key} >> $GITHUB_OUTPUT
 
     - name: cache artifacts
+      if: ${{ !github.event.inputs.ref_to_build }}
       id: cache_artifacts
       uses: actions/cache@v4
       with:
@@ -167,6 +172,11 @@ jobs:
         path: source
         key: ${{ matrix.name }}-qt5repo
 
+    - name: set qtdeclarative to custom SHA
+      if: github.event.inputs.ref_to_build
+      working-directory: source/qtdeclarative
+      run: git fetch https://codereview.qt-project.org/qt/qtdeclarative ${{github.event.inputs.ref_to_build}} && git checkout FETCH_HEAD
+
     - name: configure and build Qt
       if: steps.cache_artifacts.outputs.cache-hit != 'true' && steps.cache_qt_build.outputs.cache-hit != 'true'
       run:  |
@@ -236,6 +246,7 @@ jobs:
     permissions:
       contents: write
     runs-on: signing-runner
+    if: ${{ !github.event.inputs.ref_to_build }} 
     environment: Signing credentials
     needs: build
     steps:
