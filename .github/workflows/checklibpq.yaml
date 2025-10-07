@@ -1,0 +1,30 @@
+name: Check libpq
+
+on:
+  workflow_dispatch:
+  push:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-x64
+            os:   ubuntu-22.04
+            deps: libgl-dev libglu-dev 'libxcb*-dev' libx11-xcb-dev libxkbcommon-x11-dev libb2-dev libdouble-conversion-dev
+            tools: ccache
+            install_cmd: sudo apt-get -y install
+            configure_flags: -xcb
+            debugging_symbols_extension: .dbg
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Check libpq version
+      run: |
+        echo LD_LIBRARY_PATH=\"$LD_LIBRARY_PATH\"
+        find /usr/lib -name 'libpq*'
