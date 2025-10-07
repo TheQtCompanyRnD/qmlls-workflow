@@ -25,25 +25,25 @@ jobs:
             install_cmd: sudo apt-get --allow-downgrades -y install
             configure_flags: -xcb
             debugging_symbols_extension: .dbg
-         ###  - name: macos
-         ###    os:   macos-latest
-         ###    deps:
-         ###    tools: ccache
-         ###    install_cmd: HOMEBREW_NO_INSTALL_CLEANUP=1 brew install
-         ###    configure_flags: "-- '-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64'"
-         ###    qmlls_configure_flags: "'-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64'"
-         ###    debugging_symbols_extension: .dSYM
-         ###    unsigned_suffix: -unsigned
-         ###  - name: windows
-         ###    os:   windows-latest
-         ###    install_cmd: choco install
-         ###    install_cmd_postfix: --yes --no-progress
-         ###    tools: ccache
-         ###    configure_flags: -no-feature-sql-psql -no-feature-sql-mysql -no-feature-sql-odbc
-         ###    debugging_symbols_extension: .pdb
-         ###    executable_extension: .exe
-         ###    script_extension: .bat
-         ###    unsigned_suffix: -unsigned
+          - name: macos
+            os:   macos-latest
+            deps:
+            tools: ccache
+            install_cmd: HOMEBREW_NO_INSTALL_CLEANUP=1 brew install
+            configure_flags: "-- '-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64'"
+            qmlls_configure_flags: "'-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64'"
+            debugging_symbols_extension: .dSYM
+            unsigned_suffix: -unsigned
+          - name: windows
+            os:   windows-latest
+            install_cmd: choco install
+            install_cmd_postfix: --yes --no-progress
+            tools: ccache
+            configure_flags: -no-feature-sql-psql -no-feature-sql-mysql -no-feature-sql-odbc
+            debugging_symbols_extension: .pdb
+            executable_extension: .exe
+            script_extension: .bat
+            unsigned_suffix: -unsigned
           - name: ubuntu-arm
             os: ubuntu-22.04-arm
             deps: libgl-dev libglu-dev 'libxcb*-dev' libx11-xcb-dev libxkbcommon-x11-dev libb2-dev libdouble-conversion-dev
@@ -51,16 +51,16 @@ jobs:
             install_cmd: sudo apt-get -y install
             configure_flags: -xcb
             debugging_symbols_extension: .dbg
-         ###  - name: windows-arm
-         ###    os:   windows-11-arm
-         ###    install_cmd: choco install
-         ###    install_cmd_postfix: --yes --no-progress
-         ###    tools: ccache
-         ###    configure_flags: -no-feature-sql-psql -no-feature-sql-mysql -no-feature-sql-odbc
-         ###    debugging_symbols_extension: .pdb
-         ###    executable_extension: .exe
-         ###    script_extension: .bat
-         ###    unsigned_suffix: -unsigned
+          - name: windows-arm
+            os:   windows-11-arm
+            install_cmd: choco install
+            install_cmd_postfix: --yes --no-progress
+            tools: ccache
+            configure_flags: -no-feature-sql-psql -no-feature-sql-mysql -no-feature-sql-odbc
+            debugging_symbols_extension: .pdb
+            executable_extension: .exe
+            script_extension: .bat
+            unsigned_suffix: -unsigned
     runs-on: ${{ matrix.os }}
 
     steps:
