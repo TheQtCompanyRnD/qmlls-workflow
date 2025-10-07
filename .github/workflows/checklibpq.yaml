@@ -26,5 +26,5 @@ jobs:
     steps:
     - name: Check libpq version
       run: |
-        sudo apt-get -y install libpq5=14.19-0ubuntu0.22.04.1
+        sudo apt-get --allow-downgrades -y install libpq5=14.19-0ubuntu0.22.04.1
         ls -l $(find /usr/lib -name 'libpq.*')
