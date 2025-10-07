@@ -18,7 +18,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: ubuntu-x64
+          - name: linux-x64
             os:   ubuntu-22.04
             deps: libgl-dev libglu-dev 'libxcb*-dev' libx11-xcb-dev libxkbcommon-x11-dev libb2-dev libdouble-conversion-dev
             tools: ccache
@@ -44,7 +44,7 @@ jobs:
             executable_extension: .exe
             script_extension: .bat
             unsigned_suffix: -unsigned
-          - name: ubuntu-arm64
+          - name: linux-arm64
             os: ubuntu-22.04-arm
             deps: libgl-dev libglu-dev 'libxcb*-dev' libx11-xcb-dev libxkbcommon-x11-dev libb2-dev libdouble-conversion-dev
             tools: ccache
@@ -201,14 +201,14 @@ jobs:
         > info.txt
 
     - name: Stripping qmlls binary on linux
-      if: (matrix.name == 'ubuntu' || matrix.name == 'ubuntu-arm64') && steps.cache_artifacts.outputs.cache-hit != 'true'
+      if: runner.os == 'Linux' && steps.cache_artifacts.outputs.cache-hit != 'true'
       run: |
         objcopy --only-keep-debug ./qmlls-build/qmlls ./qmlls-build/qmlls.dbg
         strip ./qmlls-build/qmlls
         objcopy --add-gnu-debuglink=./qmlls-build/qmlls.dbg ./qmlls-build/qmlls
 
     - name: Stripping qmlls binary on mac
-      if: matrix.name == 'macos' && steps.cache_artifacts.outputs.cache-hit != 'true'
+      if: runner.os == 'macOS' && steps.cache_artifacts.outputs.cache-hit != 'true'
       run: |
         dsymutil ./qmlls-build/qmlls -o ./qmlls-build/qmlls.dSYM
         strip ./qmlls-build/qmlls
@@ -299,10 +299,10 @@ jobs:
         repack ${{ steps.sign-archives.outputs.win-arm64 }} \
           weekly_release/to_be_uploaded/qmlls-windows-arm64-${{ steps.vars.outputs.revision }}.zip
 
-        mv weekly_release/*/qmlls-ubuntu-x64-${{ steps.vars.outputs.revision }}.zip \
-          weekly_release/to_be_uploaded/qmlls-ubuntu-x64-${{ steps.vars.outputs.revision }}.zip
-        mv weekly_release/*/qmlls-ubuntu-arm64-${{ steps.vars.outputs.revision }}.zip \
-          weekly_release/to_be_uploaded/qmlls-ubuntu-arm64-${{ steps.vars.outputs.revision }}.zip
+        mv weekly_release/*/qmlls-linux-x64-${{ steps.vars.outputs.revision }}.zip \
+          weekly_release/to_be_uploaded/qmlls-linux-x64-${{ steps.vars.outputs.revision }}.zip
+        mv weekly_release/*/qmlls-linux-arm64-${{ steps.vars.outputs.revision }}.zip \
+          weekly_release/to_be_uploaded/qmlls-linux-arm64-${{ steps.vars.outputs.revision }}.zip
         mv weekly_release/*/*-debugsymbols.zip weekly_release/to_be_uploaded/
 
     - name: Upload signed artifact
