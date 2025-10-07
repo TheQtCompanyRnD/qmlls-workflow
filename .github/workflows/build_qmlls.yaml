@@ -255,7 +255,7 @@ jobs:
         echo revision=nightly-${cache_key} >> $GITHUB_OUTPUT
 
         unsigned_macos_archive="$(ls weekly_release/qmlls-macos-*-unsigned.zip/qmlls-macos-*-unsigned.zip | head -n 1)"
-        unsigned_windows_archive="$(ls weekly_release/qmlls-windows-x64-*-unsigned.zip/qmlls-windows-nightly*-unsigned.zip | head -n 1)"
+        unsigned_windows_archive="$(ls weekly_release/qmlls-windows-x64-*-unsigned.zip/qmlls-windows-x64-*-unsigned.zip | head -n 1)"
         unsigned_windows_arm_archive="$(ls weekly_release/qmlls-windows-arm64-*-unsigned.zip/qmlls-windows-arm64-*-unsigned.zip | head -n 1)"
 
         echo unsigned_macos_archive=${unsigned_macos_archive} >> $GITHUB_OUTPUT
