@@ -303,18 +303,26 @@ jobs:
           rm -rf tmp
         }
 
+        qmlls=qmllanguageserver
+
         repack ${{ steps.sign-archives.outputs.macos }} \
-          weekly_release/to_be_uploaded/qmlls-macos-universal-${{ steps.vars.outputs.revision }}.zip
+          weekly_release/to_be_uploaded/${qmlls}-macos-universal-${{ steps.vars.outputs.revision }}.zip
         repack ${{ steps.sign-archives.outputs.win-x64 }} \
-          weekly_release/to_be_uploaded/qmlls-windows-x64-${{ steps.vars.outputs.revision }}.zip
+          weekly_release/to_be_uploaded/${qmlls}-windows-x64-${{ steps.vars.outputs.revision }}.zip
         repack ${{ steps.sign-archives.outputs.win-arm64 }} \
-          weekly_release/to_be_uploaded/qmlls-windows-arm64-${{ steps.vars.outputs.revision }}.zip
+          weekly_release/to_be_uploaded/${qmlls}-windows-arm64-${{ steps.vars.outputs.revision }}.zip
 
         mv weekly_release/*/qmlls-linux-x64-${{ steps.vars.outputs.revision }}.zip \
-          weekly_release/to_be_uploaded/qmlls-linux-x64-${{ steps.vars.outputs.revision }}.zip
+          weekly_release/to_be_uploaded/${qmlls}-linux-x64-${{ steps.vars.outputs.revision }}.zip
         mv weekly_release/*/qmlls-linux-arm64-${{ steps.vars.outputs.revision }}.zip \
-          weekly_release/to_be_uploaded/qmlls-linux-arm64-${{ steps.vars.outputs.revision }}.zip
-        mv weekly_release/*/*-debugsymbols.zip weekly_release/to_be_uploaded/
+          weekly_release/to_be_uploaded/${qmlls}-linux-arm64-${{ steps.vars.outputs.revision }}.zip
+
+        # copy binaries for downloaders expecting the "old" archive names
+        cd weekly_release/to_be_uploaded
+        cp ${qmlls}-windows-x64-${{ steps.vars.outputs.revision }}.zip qmlls-windows-${{ steps.vars.outputs.revision }}.zip
+        cp ${qmlls}-macos-universal-${{ steps.vars.outputs.revision }}.zip qmlls-macos-${{ steps.vars.outputs.revision }}.zip
+        cp ${qmlls}-linux-x64-${{ steps.vars.outputs.revision }}.zip qmlls-ubuntu-${{ steps.vars.outputs.revision }}.zip
+
 
     - name: Upload signed artifact
       uses: actions/upload-artifact@v4
@@ -324,6 +332,13 @@ jobs:
           weekly_release/to_be_uploaded/qmlls-windows-x64-${{ steps.vars.outputs.revision }}.zip
           weekly_release/to_be_uploaded/qmlls-windows-arm64-${{ steps.vars.outputs.revision }}.zip
         name: signed-artifacts.zip
+
+    - name: Upload debug symbols
+      uses: actions/upload-artifact@v4
+      with:
+        path: |
+          weekly_release/*/*-debugsymbols.zip
+        name: debugsymbols.zip
 
     - name: Create nightly release
       if: ${{ github.ref == 'refs/heads/main' }}
