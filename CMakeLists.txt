@@ -3,7 +3,7 @@
 
 cmake_minimum_required(VERSION 3.16)
 
-project(qmlls VERSION 0.1 LANGUAGES CXX)
+project(qmlls VERSION 0.5 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(QT_NO_EXCEPTIONS ON)
