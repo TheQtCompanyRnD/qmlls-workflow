@@ -323,6 +323,8 @@ jobs:
         cp ${qmlls}-macos-universal-${{ steps.vars.outputs.revision }}.zip qmlls-macos-${{ steps.vars.outputs.revision }}.zip
         cp ${qmlls}-linux-x64-${{ steps.vars.outputs.revision }}.zip qmlls-ubuntu-${{ steps.vars.outputs.revision }}.zip
 
+        ls -R # debug output
+
 
     - name: Upload signed artifact
       uses: actions/upload-artifact@v4
