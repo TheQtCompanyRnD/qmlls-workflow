@@ -142,7 +142,7 @@ jobs:
     - name: cloning qt5 and initialize subrepositories
       if: steps.cache-repo.outputs.cache-hit != 'true' && steps.cache_artifacts.outputs.cache-hit != 'true'
       run:  |
-        git clone https://code.qt.io/qt/qt5.git source
+        git clone "https://codereview.qt-project.org/qt/qt5" source
         cd source
         ./init-repository --module-subset=qtdeclarative,qttools
 
