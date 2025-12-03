@@ -18,10 +18,10 @@ standalone qmlls and the qmlls shipped with Qt offer more or less the same funct
 | Platform | Is supported? | 
 | --- | --- |
 | macOS universal | ✅
-| windows x64 | ⚠️ binary signing WIP
-| windows arm64 | ⚠️ almost done
+| windows x64 | ✅
+| windows arm64 | ✅
 | linux x64 | ✅
-| linux arm64 | ⚠️ almost done
+| linux arm64 | ⚠️ might work, uses different SQL lib then linux x64
 
 ## Download
 
