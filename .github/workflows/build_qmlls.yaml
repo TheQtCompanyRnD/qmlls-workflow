@@ -24,7 +24,7 @@ jobs:
         include:
           - name: linux-x64
             os:   ubuntu-22.04
-            deps: libgl-dev libglu-dev 'libxcb*-dev' libx11-xcb-dev libxkbcommon-x11-dev libb2-dev libdouble-conversion-dev libpq5=14.19-0ubuntu0.22.04.1
+            deps: libgl-dev libglu-dev 'libxcb*-dev' libx11-xcb-dev libxkbcommon-x11-dev libb2-dev libdouble-conversion-dev libpq5=14.20-0ubuntu0.22.04.1
             tools: ccache
             install_cmd: sudo apt-get --allow-downgrades -y install
             configure_flags: -xcb
