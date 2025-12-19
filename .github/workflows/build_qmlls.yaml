@@ -24,7 +24,7 @@ jobs:
         include:
           - name: linux-x64
             os:   ubuntu-22.04
-            deps: libgl-dev libglu-dev 'libxcb*-dev' libx11-xcb-dev libxkbcommon-x11-dev libb2-dev libdouble-conversion-dev libpq5=14.19-0ubuntu0.22.04.1
+            deps: libgl-dev libglu-dev 'libxcb*-dev' libx11-xcb-dev libxkbcommon-x11-dev libb2-dev libdouble-conversion-dev libpq5=14.20-0ubuntu0.22.04.1
             tools: ccache
             install_cmd: sudo apt-get --allow-downgrades -y install
             configure_flags: -xcb
@@ -142,6 +142,7 @@ jobs:
     - name: cloning qt5 and initialize subrepositories
       if: steps.cache-repo.outputs.cache-hit != 'true' && steps.cache_artifacts.outputs.cache-hit != 'true'
       run:  |
+        rm -rf source
         git clone "https://codereview.qt-project.org/qt/qt5" source
         cd source
         ./init-repository --module-subset=qtdeclarative,qttools
