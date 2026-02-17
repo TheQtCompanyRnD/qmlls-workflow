@@ -13,6 +13,9 @@ standalone qmlls and the qmlls shipped with Qt offer more or less the same funct
 | Can be run without installing Qt | ❌ | ✅
 | Is built from qtdeclarative's | release branch | dev branch |
 
+You can find the standalone releases at https://github.com/TheQtCompanyRnD/qmlls-workflow/releases. The Qt release
+can be found at https://www.qt.io/development/download.
+
 ## Supported platforms
 
 | Platform | Is supported? | 
@@ -23,11 +26,9 @@ standalone qmlls and the qmlls shipped with Qt offer more or less the same funct
 | linux x64 | ✅
 | linux arm64 | ⚠️ might work, uses different SQL lib then linux x64
 
-## Download
+## Download for LSP clients
 
-### Download URLs
-You can download the latest standalone qmlls from https://qtccache.qt.io/QMLLS/LatestRelease and all other releases
-from https://github.com/TheQtCompanyRnD/qmlls-workflow/releases.
+LSP clients can use https://qtccache.qt.io/QMLLS/LatestRelease to find the link to the latest release programatically.
 
 ### Archive name
 Release 0.6 and later name their archive as following:
