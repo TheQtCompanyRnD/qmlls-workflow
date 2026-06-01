@@ -107,7 +107,7 @@ jobs:
       if: runner.os == 'Windows' && steps.cache_artifacts.outputs.cache-hit != 'true'
       shell: cmd
       run: |
-        call "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
+        call "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
         set >> "%GITHUB_ENV%"
 
     - name: restore ccache
