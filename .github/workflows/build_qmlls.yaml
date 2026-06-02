@@ -24,7 +24,7 @@ jobs:
         include:
           - name: linux-x64
             os:   ubuntu-22.04
-            deps: libgl-dev libglu-dev 'libxcb*-dev' libx11-xcb-dev libxkbcommon-x11-dev libb2-dev libdouble-conversion-dev libpq5=14.22-0ubuntu0.22.04.1
+            deps: libgl-dev libglu-dev 'libxcb*-dev' libx11-xcb-dev libxkbcommon-x11-dev libb2-dev libdouble-conversion-dev libpq5=14.2-1ubuntu1
             tools: ccache
             install_cmd: sudo apt-get --allow-downgrades -y install
             configure_flags: -xcb
@@ -107,7 +107,7 @@ jobs:
       if: runner.os == 'Windows' && steps.cache_artifacts.outputs.cache-hit != 'true'
       shell: cmd
       run: |
-        call "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
+        call "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
         set >> "%GITHUB_ENV%"
 
     - name: restore ccache
