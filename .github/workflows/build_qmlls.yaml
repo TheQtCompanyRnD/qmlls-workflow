@@ -109,7 +109,7 @@ jobs:
       if: runner.os == 'Windows' && steps.cache_artifacts.outputs.cache-hit != 'true'
       shell: cmd
       run: |
-        call ${{ matrix.vcvars_name }}
+        call "${{ matrix.vcvars_name }}"
         set >> "%GITHUB_ENV%"
 
     - name: restore ccache
