@@ -117,7 +117,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ${{ runner.temp }}/ccache
-        key:  ccache-${{ matrix.os }}
+        key:  ccache-${{ matrix.name }}
 
     - name: install build dependencies
       run:  ${{ matrix.install_cmd }}  ${{ matrix.deps }}  ${{ matrix.install_cmd_postfix }}
