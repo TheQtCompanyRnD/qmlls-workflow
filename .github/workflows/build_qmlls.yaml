@@ -22,22 +22,22 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: linux-x64
-            os:   ubuntu-22.04
-            deps: libgl-dev libglu-dev 'libxcb*-dev' libx11-xcb-dev libxkbcommon-x11-dev libb2-dev libdouble-conversion-dev libpq5=14.2-1ubuntu1
-            tools: ccache
-            install_cmd: sudo apt-get --allow-downgrades -y install
-            configure_flags: -xcb
-            debugging_symbols_extension: .dbg
-          - name: macos-universal
-            os:   macos-latest
-            deps:
-            tools: ccache
-            install_cmd: HOMEBREW_NO_INSTALL_CLEANUP=1 brew install
-            configure_flags: "-- '-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64'"
-            qmlls_configure_flags: "'-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64'"
-            debugging_symbols_extension: .dSYM
-            unsigned_suffix: -unsigned
+        ##- name: linux-x64
+        ##  os:   ubuntu-22.04
+        ##  deps: libgl-dev libglu-dev 'libxcb*-dev' libx11-xcb-dev libxkbcommon-x11-dev libb2-dev libdouble-conversion-dev libpq5=14.2-1ubuntu1
+        ##  tools: ccache
+        ##  install_cmd: sudo apt-get --allow-downgrades -y install
+        ##  configure_flags: -xcb
+        ##  debugging_symbols_extension: .dbg
+        ##- name: macos-universal
+        ##  os:   macos-latest
+        ##  deps:
+        ##  tools: ccache
+        ##  install_cmd: HOMEBREW_NO_INSTALL_CLEANUP=1 brew install
+        ##  configure_flags: "-- '-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64'"
+        ##  qmlls_configure_flags: "'-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64'"
+        ##  debugging_symbols_extension: .dSYM
+        ##  unsigned_suffix: -unsigned
           - name: windows-x64
             os:   windows-latest
             install_cmd: choco install
@@ -48,15 +48,16 @@ jobs:
             executable_extension: .exe
             script_extension: .bat
             unsigned_suffix: -unsigned
-          - name: linux-arm64
-            os: ubuntu-22.04-arm
-            deps: libgl-dev libglu-dev 'libxcb*-dev' libx11-xcb-dev libxkbcommon-x11-dev libb2-dev libdouble-conversion-dev
-            tools: ccache
-            install_cmd: sudo apt-get -y install
-            configure_flags: -xcb
-            debugging_symbols_extension: .dbg
+            vcvars_name: "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
+        ##- name: linux-arm64
+        ##  os: ubuntu-22.04-arm
+        ##  deps: libgl-dev libglu-dev 'libxcb*-dev' libx11-xcb-dev libxkbcommon-x11-dev libb2-dev libdouble-conversion-dev
+        ##  tools: ccache
+        ##  install_cmd: sudo apt-get -y install
+        ##  configure_flags: -xcb
+        ##  debugging_symbols_extension: .dbg
           - name: windows-arm64
-            os:   windows-11-arm
+            os:   windows-latest
             install_cmd: choco install
             install_cmd_postfix: --yes --no-progress
             tools: ccache
@@ -65,6 +66,7 @@ jobs:
             executable_extension: .exe
             script_extension: .bat
             unsigned_suffix: -unsigned
+            vcvars_name: "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Auxiliary/Build/vcvarsamd64_arm64.bat"
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -107,7 +109,7 @@ jobs:
       if: runner.os == 'Windows' && steps.cache_artifacts.outputs.cache-hit != 'true'
       shell: cmd
       run: |
-        call "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
+        call ${{ matrix.vcvars_name }}
         set >> "%GITHUB_ENV%"
 
     - name: restore ccache
