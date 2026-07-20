@@ -154,6 +154,7 @@ jobs:
       working-directory: source
       run: |
         git fetch
+        git submodule foreach --recursive git fetch
         git submodule foreach --recursive git gc --auto # try to save some disk space
         (cd qtdeclarative; git reset --hard origin/dev;)
         (cd qttools; git checkout dev; git reset --hard origin/dev; git submodule update)
