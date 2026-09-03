@@ -9,7 +9,9 @@ on:
     inputs:
       ref_to_build:
         description: qtdeclarative ref to build in the form of refs/changes/15/654815/1
-        required: true
+        required: false
+      version_tag:
+        description: version tag to build
   push:
 
 defaults:
@@ -196,12 +198,24 @@ jobs:
       with:
         path: qmlls-workflow-source
 
+    - name: Get current revision and filenames
+      id: vars
+      run: |
+        cache_key=$(date "+%Y.%W")
+        echo cache_key=${cache_key} >> $GITHUB_OUTPUT
+        [ -z "${{ github.event.inputs.version_tag }}" ] &&
+          echo revision=nightly-${cache_key} >> $GITHUB_OUTPUT ||
+          echo revision=${{ github.event.inputs.version_tag }} >> $GITHUB_OUTPUT
+
     - name: configure and build Qmlls
       if: steps.cache_artifacts.outputs.cache-hit != 'true'
       run:  |
         rm -rf qmlls-build; mkdir qmlls-build
         cd qmlls-build
-        ../qt-build/qtbase/bin/qt-cmake${{ matrix.script_extension }} -S ../qmlls-workflow-source -B . -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo ${{ matrix.qmlls_configure_flags }}
+        ../qt-build/qtbase/bin/qt-cmake${{ matrix.script_extension }} -S ../qmlls-workflow-source \
+          -B . -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+          -DVERSION=${{ steps.vars.outputs.revision }} \
+          ${{ matrix.qmlls_configure_flags }}
         ninja
 
     - name: Remove Qt Build to save disk space
@@ -347,12 +361,23 @@ jobs:
         name: debugsymbols.zip
 
     - name: Create nightly release
-      if: ${{ github.ref == 'refs/heads/main' }}
+      if: github.ref == 'refs/heads/main' && !github.event.inputs.version_tag
       uses: softprops/action-gh-release@v2
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: nightly-${{ steps.vars.outputs.cache_key }}
+        draft: false
+        prerelease: true
+        files: weekly_release/to_be_uploaded/*
+
+    - name: Create nightly release
+      if: github.event.inputs.version_tag
+      uses: softprops/action-gh-release@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: github.event.inputs.version_tag
         draft: false
         prerelease: true
         files: weekly_release/to_be_uploaded/*
