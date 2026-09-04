@@ -77,10 +77,9 @@ jobs:
       # we build qmlls once per week, so use week number + year as cache key
       run: |
         cache_key=$(date "+%Y.%W")
-        [ -z "${{ github.event.inputs.version_tag }}" ] &&
-          echo revision=nightly-${cache_key} >> $GITHUB_OUTPUT ||
-          echo revision=${{ github.event.inputs.version_tag }} >> $GITHUB_OUTPUT
-        echo artifact_basename=qmlls-${{ matrix.name }}-nightly-${key} >> $GITHUB_OUTPUT
+        [ -z "${{ github.event.inputs.version_tag }}" ] && revision=nightly-${cache_key} || revision=${{ github.event.inputs.version_tag }} 
+        echo revision=${revision} >> $GITHUB_OUTPUT
+        echo artifact_basename=qmlls-${{ matrix.name }}-${revision} >> $GITHUB_OUTPUT
 
     - name: cache artifacts
       if: ${{ !github.event.inputs.ref_to_build && !github.event.inputs.version_tag }}
