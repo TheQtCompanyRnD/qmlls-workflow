@@ -12,7 +12,6 @@ on:
         required: false
       version_tag:
         description: version tag to build
-  push:
 
 defaults:
   run:
