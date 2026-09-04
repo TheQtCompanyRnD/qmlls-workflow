@@ -11,7 +11,7 @@ on:
         description: qtdeclarative ref to build in the form of refs/changes/15/654815/1
         required: false
       version_tag:
-        description: version tag to build
+        description: Release tag to compile into qmlls's --version.
 
 defaults:
   run:
