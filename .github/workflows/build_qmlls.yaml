@@ -70,6 +70,9 @@ jobs:
             unsigned_suffix: -unsigned
             vcvars_name: "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvarsamd64_arm64.bat"
     runs-on: ${{ matrix.os }}
+    outputs:
+      revision: ${{ steps.artifacts_cache_key.outputs.revision }}
+      artifact_basename: ${{ steps.artifacts_cache_key.outputs.artifact_basename }}
 
     steps:
     - name: get artifacts cache key
