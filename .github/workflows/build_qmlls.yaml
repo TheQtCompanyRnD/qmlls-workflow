@@ -358,24 +358,14 @@ jobs:
           weekly_release/*/*-debugsymbols.zip
         name: debugsymbols.zip
 
-    - name: Create nightly release
-      if: github.ref == 'refs/heads/main' && !github.event.inputs.version_tag
+    - name: Create release
+      if: github.ref == 'refs/heads/main' || github.event.inputs.version_tag
       uses: softprops/action-gh-release@v2
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: nightly-${{ needs.build.outputs.cache_key }}
+        tag_name: ${{ needs.build.outputs.revision }}
         draft: false
         prerelease: true
         files: weekly_release/to_be_uploaded/*
 
-    - name: Create nightly release
-      if: github.event.inputs.version_tag
-      uses: softprops/action-gh-release@v2
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.event.inputs.version_tag }}
-        draft: false
-        prerelease: true
-        files: weekly_release/to_be_uploaded/*
