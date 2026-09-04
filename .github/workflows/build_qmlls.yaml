@@ -84,7 +84,6 @@ jobs:
         echo artifact_basename=qmlls-${{ matrix.name }}-${revision} >> $GITHUB_OUTPUT
 
     - name: cache artifacts
-      if: ${{ !github.event.inputs.ref_to_build && !github.event.inputs.version_tag }}
       id: cache_artifacts
       uses: actions/cache@v4
       with:
