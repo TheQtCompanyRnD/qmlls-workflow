@@ -337,9 +337,9 @@ jobs:
 
         # copy binaries for downloaders expecting the "old" archive names
         cd weekly_release/to_be_uploaded
-        cp ${{ steps.vars.outputs.qmlls }}-windows-x64-${{ needs.build.output.revision }}.zip qmlls-windows-${{ needs.build.output.revision }}.zip
-        cp ${{ steps.vars.outputs.qmlls }}-macos-universal-${{ needs.build.output.revision }}.zip qmlls-macos-${{ needs.build.output.revision }}.zip
-        cp ${{ steps.vars.outputs.qmlls }}-linux-x64-${{ needs.build.output.revision }}.zip qmlls-ubuntu-${{ needs.build.output.revision }}.zip
+        cp ${{ steps.vars.outputs.qmlls }}-windows-x64-${{ needs.build.outputs.revision }}.zip qmlls-windows-${{ needs.build.outputs.revision }}.zip
+        cp ${{ steps.vars.outputs.qmlls }}-macos-universal-${{ needs.build.outputs.revision }}.zip qmlls-macos-${{ needs.build.outputs.revision }}.zip
+        cp ${{ steps.vars.outputs.qmlls }}-linux-x64-${{ needs.build.outputs.revision }}.zip qmlls-ubuntu-${{ needs.build.outputs.revision }}.zip
 
         ls -R # debug output
 
@@ -348,9 +348,9 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         path: |
-          weekly_release/to_be_uploaded/${{ steps.vars.outputs.qmlls }}-macos-universal-${{ needs.build.output.revision }}.zip
-          weekly_release/to_be_uploaded/${{ steps.vars.outputs.qmlls }}-windows-x64-${{ needs.build.output.revision }}.zip
-          weekly_release/to_be_uploaded/${{ steps.vars.outputs.qmlls }}-windows-arm64-${{ needs.build.output.revision }}.zip
+          weekly_release/to_be_uploaded/${{ steps.vars.outputs.qmlls }}-macos-universal-${{ needs.build.outputs.revision }}.zip
+          weekly_release/to_be_uploaded/${{ steps.vars.outputs.qmlls }}-windows-x64-${{ needs.build.outputs.revision }}.zip
+          weekly_release/to_be_uploaded/${{ steps.vars.outputs.qmlls }}-windows-arm64-${{ needs.build.outputs.revision }}.zip
         name: signed-artifacts.zip
 
     - name: Upload debug symbols
