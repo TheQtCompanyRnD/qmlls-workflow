@@ -76,8 +76,10 @@ jobs:
       id: artifacts_cache_key
       # we build qmlls once per week, so use week number + year as cache key
       run: |
-        key=$(date "+%Y.%W")
-        echo "key=${key}" >> $GITHUB_OUTPUT
+        cache_key=$(date "+%Y.%W")
+        [ -z "${{ github.event.inputs.version_tag }}" ] &&
+          echo revision=nightly-${cache_key} >> $GITHUB_OUTPUT ||
+          echo revision=${{ github.event.inputs.version_tag }} >> $GITHUB_OUTPUT
         echo artifact_basename=qmlls-${{ matrix.name }}-nightly-${key} >> $GITHUB_OUTPUT
 
     - name: cache artifacts
@@ -86,7 +88,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: artifacts
-        key: ${{ matrix.name }}-${{ steps.artifacts_cache_key.outputs.key }}-artifacts
+        key: ${{ matrix.name }}-${{ steps.artifacts_cache_key.outputs.revision }}-artifacts
 
     - uses: lukka/get-cmake@latest
       if: steps.cache_artifacts.outputs.cache-hit != 'true'
@@ -276,15 +278,9 @@ jobs:
       with:
         path: weekly_release
 
-    - name: Get current revision and filenames
+    - name: Get current filenames
       id: vars
       run: |
-        cache_key=$(date "+%Y.%W")
-        echo cache_key=${cache_key} >> $GITHUB_OUTPUT
-        [ -z "${{ github.event.inputs.version_tag }}" ] &&
-          echo revision=nightly-${cache_key} >> $GITHUB_OUTPUT ||
-          echo revision=${{ github.event.inputs.version_tag }} >> $GITHUB_OUTPUT
-
         unsigned_macos_archive="$(ls weekly_release/qmlls-macos-*-unsigned.zip/qmlls-macos-*-unsigned.zip | head -n 1)"
         unsigned_windows_archive="$(ls weekly_release/qmlls-windows-x64-*-unsigned.zip/qmlls-windows-x64-*-unsigned.zip | head -n 1)"
         unsigned_windows_arm_archive="$(ls weekly_release/qmlls-windows-arm64-*-unsigned.zip/qmlls-windows-arm64-*-unsigned.zip | head -n 1)"
@@ -326,22 +322,22 @@ jobs:
         }
 
         repack ${{ steps.sign-archives.outputs.macos }} \
-          weekly_release/to_be_uploaded/${{ steps.vars.outputs.qmlls }}-macos-universal-${{ steps.vars.outputs.revision }}.zip
+          weekly_release/to_be_uploaded/${{ steps.vars.outputs.qmlls }}-macos-universal-${{ needs.build.outputs.revision }}.zip
         repack ${{ steps.sign-archives.outputs.win-x64 }} \
-          weekly_release/to_be_uploaded/${{ steps.vars.outputs.qmlls }}-windows-x64-${{ steps.vars.outputs.revision }}.zip
+          weekly_release/to_be_uploaded/${{ steps.vars.outputs.qmlls }}-windows-x64-${{ needs.build.outputs.revision }}.zip
         repack ${{ steps.sign-archives.outputs.win-arm64 }} \
-          weekly_release/to_be_uploaded/${{ steps.vars.outputs.qmlls }}-windows-arm64-${{ steps.vars.outputs.revision }}.zip
+          weekly_release/to_be_uploaded/${{ steps.vars.outputs.qmlls }}-windows-arm64-${{ needs.build.outputs.revision }}.zip
 
-        mv weekly_release/*/qmlls-linux-x64-${{ steps.vars.outputs.revision }}.zip \
-          weekly_release/to_be_uploaded/${{ steps.vars.outputs.qmlls }}-linux-x64-${{ steps.vars.outputs.revision }}.zip
-        mv weekly_release/*/qmlls-linux-arm64-${{ steps.vars.outputs.revision }}.zip \
-          weekly_release/to_be_uploaded/${{ steps.vars.outputs.qmlls }}-linux-arm64-${{ steps.vars.outputs.revision }}.zip
+        mv weekly_release/*/qmlls-linux-x64-${{ needs.build.outputs.revision }}.zip \
+          weekly_release/to_be_uploaded/${{ steps.vars.outputs.qmlls }}-linux-x64-${{ needs.build.outputs.revision }}.zip
+        mv weekly_release/*/qmlls-linux-arm64-${{ needs.build.outputs.revision }}.zip \
+          weekly_release/to_be_uploaded/${{ steps.vars.outputs.qmlls }}-linux-arm64-${{ needs.build.outputs.revision }}.zip
 
         # copy binaries for downloaders expecting the "old" archive names
         cd weekly_release/to_be_uploaded
-        cp ${{ steps.vars.outputs.qmlls }}-windows-x64-${{ steps.vars.outputs.revision }}.zip qmlls-windows-${{ steps.vars.outputs.revision }}.zip
-        cp ${{ steps.vars.outputs.qmlls }}-macos-universal-${{ steps.vars.outputs.revision }}.zip qmlls-macos-${{ steps.vars.outputs.revision }}.zip
-        cp ${{ steps.vars.outputs.qmlls }}-linux-x64-${{ steps.vars.outputs.revision }}.zip qmlls-ubuntu-${{ steps.vars.outputs.revision }}.zip
+        cp ${{ steps.vars.outputs.qmlls }}-windows-x64-${{ needs.build.output.revision }}.zip qmlls-windows-${{ needs.build.output.revision }}.zip
+        cp ${{ steps.vars.outputs.qmlls }}-macos-universal-${{ needs.build.output.revision }}.zip qmlls-macos-${{ needs.build.output.revision }}.zip
+        cp ${{ steps.vars.outputs.qmlls }}-linux-x64-${{ needs.build.output.revision }}.zip qmlls-ubuntu-${{ needs.build.output.revision }}.zip
 
         ls -R # debug output
 
@@ -350,9 +346,9 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         path: |
-          weekly_release/to_be_uploaded/${{ steps.vars.outputs.qmlls }}-macos-universal-${{ steps.vars.outputs.revision }}.zip
-          weekly_release/to_be_uploaded/${{ steps.vars.outputs.qmlls }}-windows-x64-${{ steps.vars.outputs.revision }}.zip
-          weekly_release/to_be_uploaded/${{ steps.vars.outputs.qmlls }}-windows-arm64-${{ steps.vars.outputs.revision }}.zip
+          weekly_release/to_be_uploaded/${{ steps.vars.outputs.qmlls }}-macos-universal-${{ needs.build.output.revision }}.zip
+          weekly_release/to_be_uploaded/${{ steps.vars.outputs.qmlls }}-windows-x64-${{ needs.build.output.revision }}.zip
+          weekly_release/to_be_uploaded/${{ steps.vars.outputs.qmlls }}-windows-arm64-${{ needs.build.output.revision }}.zip
         name: signed-artifacts.zip
 
     - name: Upload debug symbols
@@ -368,7 +364,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: nightly-${{ steps.vars.outputs.cache_key }}
+        tag_name: nightly-${{ needs.build.outputs.cache_key }}
         draft: false
         prerelease: true
         files: weekly_release/to_be_uploaded/*
