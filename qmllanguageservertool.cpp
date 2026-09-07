@@ -32,7 +32,7 @@ using namespace Qt::StringLiterals;
 
 int main(int argv, char *argc[])
 {
-    QCoreApplication::setApplicationVersion("0.6"_L1);
+    QCoreApplication::setApplicationVersion(QLatin1String(VERSION));
     QCoreApplication::setApplicationName("qmlls (standalone)"_L1);
     return QmlLsp::qmllsMain(argv, argc);
 }
