@@ -316,7 +316,8 @@ jobs:
           rm -rf tmp; mkdir tmp
           cd tmp
           7z x "../$1"
-          chmod +x qmlls${{ matrix.executable_extension }}
+          [ -f ./qmlls ] && chmod +x ./qmlls
+          [ -f ./qmlls.exe ] && chmod +x ./qmlls.exe
           7z a "../$2" *
           cd ..
           rm -rf tmp
