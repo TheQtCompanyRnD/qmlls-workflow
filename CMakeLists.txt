@@ -15,7 +15,7 @@ qt_standard_project_setup(REQUIRES 6.8)
 
 qt_add_executable(qmlls WIN32 qmllanguageservertool.cpp)
 
-target_compile_definitions(qmlls PUBLIC VERSION="${CMAKE_PROJECT_VERSION}")
+target_compile_definitions(qmlls PUBLIC VERSION="${VERSION}")
 
 # keep binary size of qmlls small, exclude plugins that are not needed
 qt_import_plugins(qmlls
