@@ -3,7 +3,8 @@
 
 cmake_minimum_required(VERSION 3.16)
 
-project(qmlls VERSION ${VERSION} LANGUAGES CXX)
+project(qmlls LANGUAGES CXX)
+set(PROJECT_VERSION ${VERSION})
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(QT_NO_EXCEPTIONS ON)
@@ -14,7 +15,7 @@ qt_standard_project_setup(REQUIRES 6.8)
 
 qt_add_executable(qmlls WIN32 qmllanguageservertool.cpp)
 
-target_compile_definitions(qmlls PUBLIC VERSION="${CMAKE_PROJECT_VERSION}")
+target_compile_definitions(qmlls PUBLIC VERSION="${VERSION}")
 
 # keep binary size of qmlls small, exclude plugins that are not needed
 qt_import_plugins(qmlls
