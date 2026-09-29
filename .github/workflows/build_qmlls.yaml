@@ -26,14 +26,12 @@ jobs:
           - name: linux-x64
             os:   ubuntu-22.04
             deps: libgl-dev libglu-dev 'libxcb*-dev' libx11-xcb-dev libxkbcommon-x11-dev libb2-dev libdouble-conversion-dev libpq5=14.2-1ubuntu1
-            tools: ccache
             install_cmd: sudo apt-get --allow-downgrades -y install
             configure_flags: -xcb
             debugging_symbols_extension: .dbg
           - name: macos-universal
             os:   macos-latest
             deps:
-            tools: ccache
             install_cmd: HOMEBREW_NO_INSTALL_CLEANUP=1 brew install
             configure_flags: "-- '-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64'"
             qmlls_configure_flags: "'-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64'"
@@ -43,7 +41,6 @@ jobs:
             os:   windows-latest
             install_cmd: choco install
             install_cmd_postfix: --yes --no-progress
-            tools: ccache
             configure_flags: -no-feature-sql-psql -no-feature-sql-mysql -no-feature-sql-odbc
             debugging_symbols_extension: .pdb
             executable_extension: .exe
@@ -53,7 +50,6 @@ jobs:
           - name: linux-arm64
             os: ubuntu-22.04-arm
             deps: libgl-dev libglu-dev 'libxcb*-dev' libx11-xcb-dev libxkbcommon-x11-dev libb2-dev libdouble-conversion-dev
-            tools: ccache
             install_cmd: sudo apt-get -y install
             configure_flags: -xcb
             debugging_symbols_extension: .dbg
@@ -61,7 +57,6 @@ jobs:
             os:   windows-11-arm
             install_cmd: choco install
             install_cmd_postfix: --yes --no-progress
-            tools: ccache
             configure_flags: -no-feature-sql-psql -no-feature-sql-mysql -no-feature-sql-odbc
             debugging_symbols_extension: .pdb
             executable_extension: .exe
@@ -116,26 +111,9 @@ jobs:
         call "${{ matrix.vcvars_name }}"
         set >> "%GITHUB_ENV%"
 
-    - name: restore ccache
-      if: steps.cache_artifacts.outputs.cache-hit != 'true'
-      uses: actions/cache@v4
-      with:
-        path: ${{ runner.temp }}/ccache
-        key:  ccache-${{ matrix.name }}
-
     - name: install build dependencies
       run:  ${{ matrix.install_cmd }}  ${{ matrix.deps }}  ${{ matrix.install_cmd_postfix }}
       if: matrix.deps != '' && steps.cache_artifacts.outputs.cache-hit != 'true'
-    - name: install compiler tools
-      if: steps.cache_artifacts.outputs.cache-hit != 'true'
-      run:  ${{ matrix.install_cmd }}  ${{ matrix.tools }}  ${{ matrix.install_cmd_postfix }}
-    - name: configure ccache
-      if: steps.cache_artifacts.outputs.cache-hit != 'true'
-      run: |
-        ccache --set-config sloppiness=file_macro,time_macros
-        ccache --set-config cache_dir='${{ runner.temp }}'/ccache
-        ccache --set-config compression=true
-        ccache --set-config max_size=1G
 
     - name: cache repository
       id: cache-repo
@@ -190,7 +168,7 @@ jobs:
       run:  |
         rm -rf qt-build; mkdir qt-build
         cd qt-build
-        ../source/configure -force-debug-info -ccache -no-pch -release -static -no-icu \
+        ../source/configure -force-debug-info -no-pch -release -static -no-icu \
           -force-bundled-libs -submodules qtdeclarative,qttools -nomake tests -nomake examples \
           -no-prefix -no-sbom -no-gui ${{ matrix.configure_flags }}
         ninja qtdeclarative qtbase Tools QHelpEnginePlugin_init QHelpEnginePlugin
