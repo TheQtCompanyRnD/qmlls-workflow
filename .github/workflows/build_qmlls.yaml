@@ -225,6 +225,7 @@ jobs:
       if: steps.cache_artifacts.outputs.cache-hit != 'true'
       run: |
         mkdir artifacts
+        ls -lR qmlls-build # debug output
         7z a artifacts/${{ steps.artifacts_cache_key.outputs.artifact_basename }}-debugsymbols.zip ./qmlls-build/qmlls${{ matrix.debugging_symbols_extension }} info.txt
         7z a artifacts/${{ steps.artifacts_cache_key.outputs.artifact_basename }}${{ matrix.unsigned_suffix }}.zip ./qmlls-build/qmlls${{ matrix.executable_extension }} info.txt
 
