@@ -226,7 +226,7 @@ jobs:
       run: |
         mkdir artifacts
         ls -lR qmlls-build # debug output
-        7z a artifacts/${{ steps.artifacts_cache_key.outputs.artifact_basename }}-debugsymbols.zip ./qmlls-build/qmlls${{ matrix.debugging_symbols_extension }} info.txt
+        7z a artifacts/${{ steps.artifacts_cache_key.outputs.artifact_basename }}-debugsymbols.zip ./qmlls-build/qmlls${{ matrix.debugging_symbols_extension }} info.txt || true
         7z a artifacts/${{ steps.artifacts_cache_key.outputs.artifact_basename }}${{ matrix.unsigned_suffix }}.zip ./qmlls-build/qmlls${{ matrix.executable_extension }} info.txt
 
     - name: Upload artifact
@@ -237,6 +237,7 @@ jobs:
 
     - name: Upload artifact with debug symbols
       uses: actions/upload-artifact@v4
+      continue-on-error: true
       with:
         path: artifacts/${{ steps.artifacts_cache_key.outputs.artifact_basename }}-debugsymbols.zip
         name: ${{ steps.artifacts_cache_key.outputs.artifact_basename }}-debugsymbols.zip
@@ -320,9 +321,6 @@ jobs:
         cp ${{ steps.vars.outputs.qmlls }}-macos-universal-${{ needs.build.outputs.revision }}.zip qmlls-macos-${{ needs.build.outputs.revision }}.zip
         cp ${{ steps.vars.outputs.qmlls }}-linux-x64-${{ needs.build.outputs.revision }}.zip qmlls-ubuntu-${{ needs.build.outputs.revision }}.zip
 
-        ls -R # debug output
-
-
     - name: Upload signed artifact
       uses: actions/upload-artifact@v4
       with:
@@ -334,6 +332,7 @@ jobs:
 
     - name: Upload debug symbols
       uses: actions/upload-artifact@v4
+      continue-on-error: true
       with:
         path: |
           weekly_release/*/*-debugsymbols.zip
