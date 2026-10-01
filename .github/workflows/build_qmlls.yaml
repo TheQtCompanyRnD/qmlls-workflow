@@ -106,17 +106,12 @@ jobs:
       if: runner.os == 'Windows' && steps.cache_artifacts.outputs.cache-hit != 'true'
       shell: cmd
       run: |
-        @if not defined _echo echo off
-        for /f "usebackq delims=" %%i in (`vswhere.exe -prerelease -latest -property installationPath`) do (
-          if exist "%%i\Common7\Tools\vsdevcmd.bat" (
-            call "%%i\Common7\Tools\vsdevcmd.bat"
+          for /f "usebackq delims=" %%i in (`vswhere.exe -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.ARM64 -find VC\Auxiliary\Build\vcvarsarm64.bat`)
+          do (
+            call "%%i"
             set >> "%GITHUB_ENV%"
-            exit /b
+            set # debug output
           )
-        )
-
-        rem Instance or command prompt not found
-        exit /b 2
 
     - name: install build dependencies
       run:  ${{ matrix.install_cmd }}  ${{ matrix.deps }}  ${{ matrix.install_cmd_postfix }}
