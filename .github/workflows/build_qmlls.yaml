@@ -46,6 +46,7 @@ jobs:
             executable_extension: .exe
             script_extension: .bat
             unsigned_suffix: -unsigned
+            vcvars: vcvars64.bat
           - name: linux-arm64
             os: ubuntu-22.04-arm
             deps: libgl-dev libglu-dev 'libxcb*-dev' libx11-xcb-dev libxkbcommon-x11-dev libb2-dev libdouble-conversion-dev
@@ -61,6 +62,7 @@ jobs:
             executable_extension: .exe
             script_extension: .bat
             unsigned_suffix: -unsigned
+            vcvars: vcvarsarm64.bat
     runs-on: ${{ matrix.os }}
     outputs:
       revision: ${{ steps.artifacts_cache_key.outputs.revision }}
@@ -108,8 +110,8 @@ jobs:
       run: |
         @if not defined _echo echo off
         for /f "usebackq delims=" %%i in (`vswhere.exe -prerelease -latest -property installationPath`) do (
-          if exist "%%i\VC\Auxiliary\Build\vcvarsarm64.bat" (
-            call "%%i\VC\Auxiliary\Build\vcvarsarm64.bat"
+          if exist "%%i\VC\Auxiliary\Build\${{ matrix.vcvars }}" (
+            call "%%i\VC\Auxiliary\Build\${{ matrix.vcvars }}"
             set >> "%GITHUB_ENV%"
             exit /b
           )
