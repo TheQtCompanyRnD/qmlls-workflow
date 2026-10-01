@@ -54,7 +54,7 @@ jobs:
             configure_flags: -xcb
             debugging_symbols_extension: .dbg
           - name: windows-arm64
-            os:   windows-11-arm
+            os: windows-11-vs2026-arm
             install_cmd: choco install
             install_cmd_postfix: --yes --no-progress
             configure_flags: -no-feature-sql-psql -no-feature-sql-mysql -no-feature-sql-odbc
