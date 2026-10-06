@@ -26,14 +26,12 @@ jobs:
           - name: linux-x64
             os:   ubuntu-22.04
             deps: libgl-dev libglu-dev 'libxcb*-dev' libx11-xcb-dev libxkbcommon-x11-dev libb2-dev libdouble-conversion-dev libpq5=14.2-1ubuntu1
-            tools: ccache
             install_cmd: sudo apt-get --allow-downgrades -y install
             configure_flags: -xcb
             debugging_symbols_extension: .dbg
           - name: macos-universal
             os:   macos-latest
             deps:
-            tools: ccache
             install_cmd: HOMEBREW_NO_INSTALL_CLEANUP=1 brew install
             configure_flags: "-- '-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64'"
             qmlls_configure_flags: "'-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64'"
@@ -43,31 +41,28 @@ jobs:
             os:   windows-latest
             install_cmd: choco install
             install_cmd_postfix: --yes --no-progress
-            tools: ccache
             configure_flags: -no-feature-sql-psql -no-feature-sql-mysql -no-feature-sql-odbc
             debugging_symbols_extension: .pdb
             executable_extension: .exe
             script_extension: .bat
             unsigned_suffix: -unsigned
-            vcvars_name: "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
+            vcvars: vcvars64.bat
           - name: linux-arm64
             os: ubuntu-22.04-arm
             deps: libgl-dev libglu-dev 'libxcb*-dev' libx11-xcb-dev libxkbcommon-x11-dev libb2-dev libdouble-conversion-dev
-            tools: ccache
             install_cmd: sudo apt-get -y install
             configure_flags: -xcb
             debugging_symbols_extension: .dbg
           - name: windows-arm64
-            os:   windows-11-arm
+            os: windows-11-vs2026-arm
             install_cmd: choco install
             install_cmd_postfix: --yes --no-progress
-            tools: ccache
             configure_flags: -no-feature-sql-psql -no-feature-sql-mysql -no-feature-sql-odbc
             debugging_symbols_extension: .pdb
             executable_extension: .exe
             script_extension: .bat
             unsigned_suffix: -unsigned
-            vcvars_name: "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvarsamd64_arm64.bat"
+            vcvars: vcvarsarm64.bat
     runs-on: ${{ matrix.os }}
     outputs:
       revision: ${{ steps.artifacts_cache_key.outputs.revision }}
@@ -113,29 +108,21 @@ jobs:
       if: runner.os == 'Windows' && steps.cache_artifacts.outputs.cache-hit != 'true'
       shell: cmd
       run: |
-        call "${{ matrix.vcvars_name }}"
-        set >> "%GITHUB_ENV%"
+        @if not defined _echo echo off
+        for /f "usebackq delims=" %%i in (`vswhere.exe -prerelease -latest -property installationPath`) do (
+          if exist "%%i\VC\Auxiliary\Build\${{ matrix.vcvars }}" (
+            call "%%i\VC\Auxiliary\Build\${{ matrix.vcvars }}"
+            set >> "%GITHUB_ENV%"
+            exit /b
+          )
+        )
 
-    - name: restore ccache
-      if: steps.cache_artifacts.outputs.cache-hit != 'true'
-      uses: actions/cache@v4
-      with:
-        path: ${{ runner.temp }}/ccache
-        key:  ccache-${{ matrix.name }}
+        rem Instance or command prompt not found
+        exit /b 2
 
     - name: install build dependencies
       run:  ${{ matrix.install_cmd }}  ${{ matrix.deps }}  ${{ matrix.install_cmd_postfix }}
       if: matrix.deps != '' && steps.cache_artifacts.outputs.cache-hit != 'true'
-    - name: install compiler tools
-      if: steps.cache_artifacts.outputs.cache-hit != 'true'
-      run:  ${{ matrix.install_cmd }}  ${{ matrix.tools }}  ${{ matrix.install_cmd_postfix }}
-    - name: configure ccache
-      if: steps.cache_artifacts.outputs.cache-hit != 'true'
-      run: |
-        ccache --set-config sloppiness=file_macro,time_macros
-        ccache --set-config cache_dir='${{ runner.temp }}'/ccache
-        ccache --set-config compression=true
-        ccache --set-config max_size=1G
 
     - name: cache repository
       id: cache-repo
@@ -190,7 +177,7 @@ jobs:
       run:  |
         rm -rf qt-build; mkdir qt-build
         cd qt-build
-        ../source/configure -force-debug-info -ccache -no-pch -release -static -no-icu \
+        ../source/configure -force-debug-info -no-pch -release -static -no-icu \
           -force-bundled-libs -submodules qtdeclarative,qttools -nomake tests -nomake examples \
           -no-prefix -no-sbom -no-gui ${{ matrix.configure_flags }}
         ninja qtdeclarative qtbase Tools QHelpEnginePlugin_init QHelpEnginePlugin
@@ -247,7 +234,8 @@ jobs:
       if: steps.cache_artifacts.outputs.cache-hit != 'true'
       run: |
         mkdir artifacts
-        7z a artifacts/${{ steps.artifacts_cache_key.outputs.artifact_basename }}-debugsymbols.zip ./qmlls-build/qmlls${{ matrix.debugging_symbols_extension }} info.txt
+        ls -lR qmlls-build # debug output
+        7z a artifacts/${{ steps.artifacts_cache_key.outputs.artifact_basename }}-debugsymbols.zip ./qmlls-build/qmlls${{ matrix.debugging_symbols_extension }} info.txt || true
         7z a artifacts/${{ steps.artifacts_cache_key.outputs.artifact_basename }}${{ matrix.unsigned_suffix }}.zip ./qmlls-build/qmlls${{ matrix.executable_extension }} info.txt
 
     - name: Upload artifact
@@ -258,6 +246,7 @@ jobs:
 
     - name: Upload artifact with debug symbols
       uses: actions/upload-artifact@v4
+      continue-on-error: true
       with:
         path: artifacts/${{ steps.artifacts_cache_key.outputs.artifact_basename }}-debugsymbols.zip
         name: ${{ steps.artifacts_cache_key.outputs.artifact_basename }}-debugsymbols.zip
@@ -341,9 +330,6 @@ jobs:
         cp ${{ steps.vars.outputs.qmlls }}-macos-universal-${{ needs.build.outputs.revision }}.zip qmlls-macos-${{ needs.build.outputs.revision }}.zip
         cp ${{ steps.vars.outputs.qmlls }}-linux-x64-${{ needs.build.outputs.revision }}.zip qmlls-ubuntu-${{ needs.build.outputs.revision }}.zip
 
-        ls -R # debug output
-
-
     - name: Upload signed artifact
       uses: actions/upload-artifact@v4
       with:
@@ -355,6 +341,7 @@ jobs:
 
     - name: Upload debug symbols
       uses: actions/upload-artifact@v4
+      continue-on-error: true
       with:
         path: |
           weekly_release/*/*-debugsymbols.zip
