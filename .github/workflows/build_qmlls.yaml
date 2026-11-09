@@ -136,7 +136,7 @@ jobs:
       if: steps.cache-repo.outputs.cache-hit != 'true' && steps.cache_artifacts.outputs.cache-hit != 'true'
       run:  |
         rm -rf source
-        git clone "https://codereview.qt-project.org/qt/qt5" source
+        git clone "https://code.qt.io/qt/qt5" source
         cd source
         ./init-repository --module-subset=qtdeclarative,qttools
 
@@ -170,7 +170,7 @@ jobs:
     - name: set qtdeclarative to custom SHA
       if: github.event.inputs.ref_to_build
       working-directory: source/qtdeclarative
-      run: git fetch https://codereview.qt-project.org/qt/qtdeclarative ${{github.event.inputs.ref_to_build}} && git checkout FETCH_HEAD
+      run: git fetch https://code.qt.io/qt/qtdeclarative ${{github.event.inputs.ref_to_build}} && git checkout FETCH_HEAD
 
     - name: configure and build Qt
       if: steps.cache_artifacts.outputs.cache-hit != 'true' && steps.cache_qt_build.outputs.cache-hit != 'true'
